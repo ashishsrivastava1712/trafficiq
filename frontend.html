@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrafficIQ — Urban Congestion Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#0a0e1a;--bg2:#111827;--bg3:#1a2235;--bg4:#1e2d47;--border:rgba(99,179,237,0.15);--border2:rgba(99,179,237,0.25);--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--accent:#38bdf8;--accent2:#0ea5e9;--green:#22c55e;--yellow:#eab308;--orange:#f97316;--red:#ef4444;--purple:#a855f7;--pink:#ec4899;--font:'Space Grotesk',sans-serif;--mono:'JetBrains Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:3px}
+.header{background:linear-gradient(135deg,#0a1628,#0f2040,#0a1628);border-bottom:1px solid var(--border2);padding:0 2rem;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#38bdf8,#0ea5e9);display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-size:16px;font-weight:700}
+.logo-sub{font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase}
+.header-right{display:flex;align-items:center;gap:10px}
+.live-badge{display:flex;align-items:center;gap:6px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--green)}
+.live-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.model-badge{background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.25);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--purple)}
+.map-badge{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--green);text-decoration:none;cursor:pointer}
+.api-badge{font-size:11px;padding:4px 10px;border-radius:20px}
+.api-ok{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
+.api-err{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
+.nav{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;padding:0 2rem;overflow-x:auto}
+.nav-btn{padding:14px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text3);border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;font-family:var(--font);text-decoration:none;display:inline-flex;align-items:center}
+.nav-btn:hover{color:var(--text)}
+.nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.nav-link{padding:14px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--green);border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;font-family:var(--font);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.nav-link:hover{color:var(--text);border-bottom-color:var(--green)}
+.content{padding:1.5rem 2rem;max-width:1600px;margin:0 auto}
+.page{display:none}
+.page.active{display:block}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1.5rem}
+.grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1.5rem}
+.grid-1-2{display:grid;grid-template-columns:1fr 2fr;gap:1rem;margin-bottom:1.5rem}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;transition:border-color 0.2s}
+.card:hover{border-color:var(--border2)}
+.card-title{font-size:12px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--text3);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+.kpi{text-align:center}
+.kpi-val{font-size:28px;font-weight:700;font-family:var(--mono);letter-spacing:-1px}
+.kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-top:4px}
+.kpi-delta{font-size:12px;margin-top:6px}
+.kpi-delta.up{color:var(--red)}
+.kpi-delta.down{color:var(--green)}
+.chart-wrap{position:relative;width:100%}
+.chart-wrap.h200{height:200px}
+.chart-wrap.h250{height:250px}
+.chart-wrap.h280{height:280px}
+.chart-wrap.h300{height:300px}
+.chart-wrap.h320{height:320px}
+.chart-wrap.h380{height:380px}
+.hm-cell{height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--mono);color:rgba(255,255,255,0.8);cursor:pointer;transition:transform 0.1s}
+.hm-cell:hover{transform:scale(1.15);z-index:5;position:relative}
+.peak-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.peak-item:last-child{border-bottom:none}
+.peak-time{font-family:var(--mono);font-size:14px;font-weight:500;min-width:80px}
+.peak-bar-wrap{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.peak-bar{height:100%;border-radius:4px;transition:width 0.6s}
+.peak-vol{font-family:var(--mono);font-size:12px;color:var(--text3);min-width:60px;text-align:right}
+.form-group{margin-bottom:0}
+.form-group label{font-size:12px;color:var(--text2);display:block;margin-bottom:6px}
+.form-group select,.form-group input{width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color 0.2s}
+.form-group select:focus,.form-group input:focus{border-color:var(--accent)}
+.form-group select option{background:var(--bg3)}
+.btn-predict{width:100%;padding:14px;background:linear-gradient(135deg,#0ea5e9,#38bdf8);border:none;border-radius:10px;color:#000;font-weight:700;font-size:15px;cursor:pointer;font-family:var(--font);transition:opacity 0.2s}
+.btn-predict:hover{opacity:0.9}
+.btn-secondary{width:100%;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-weight:600;font-size:14px;cursor:pointer;font-family:var(--font);transition:all 0.2s;margin-top:0.5rem}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.result-big{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:1.5rem;text-align:center;margin-top:1rem}
+.congestion-bar{width:100%;height:8px;background:var(--bg4);border-radius:4px;margin-top:12px;overflow:hidden}
+.congestion-fill{height:100%;border-radius:4px;transition:width 0.6s}
+.fi-item{margin-bottom:10px}
+.fi-header{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.fi-pct{font-family:var(--mono);color:var(--accent);font-size:12px}
+.fi-bar-bg{height:6px;background:var(--bg3);border-radius:3px}
+.fi-bar{height:6px;border-radius:3px;transition:width 0.6s}
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.tag-low{background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
+.tag-medium{background:rgba(56,189,248,0.15);color:var(--accent);border:1px solid rgba(56,189,248,0.3)}
+.tag-high{background:rgba(234,179,8,0.15);color:var(--yellow);border:1px solid rgba(234,179,8,0.3)}
+.tag-severe{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
+.info-list{list-style:none;display:flex;flex-direction:column;gap:10px}
+.info-list li{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text2);line-height:1.5}
+.info-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);margin-top:6px;flex-shrink:0}
+.slider-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px}
+.slider-val{color:var(--accent);font-weight:600;font-family:var(--mono)}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--bg4);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day-name{font-size:11px;color:var(--text3);text-align:center;padding:4px 0}
+.cal-cell{aspect-ratio:1;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:11px;transition:transform 0.1s}
+.cal-cell:hover{transform:scale(1.1);z-index:2}
+.section-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:1rem;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';display:block;width:3px;height:14px;background:var(--accent);border-radius:2px}
+.map-banner{background:linear-gradient(135deg,rgba(56,189,248,0.1),rgba(168,85,247,0.1));border:1px solid var(--border2);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between}
+.map-btn{padding:12px 28px;background:linear-gradient(135deg,#0ea5e9,#38bdf8);border:none;border-radius:10px;color:#000;font-weight:700;font-size:14px;cursor:pointer;font-family:var(--font);text-decoration:none;display:inline-block}
+@media(max-width:1200px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr 1fr}.grid-2-1,.grid-1-2{grid-template-columns:1fr}}
+@media(max-width:768px){.content{padding:1rem}.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">🚦</div>
+    <div>
+      <div class="logo-text">TrafficIQ</div>
+      <div class="logo-sub">Urban Congestion Intelligence</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span id="apiBadge" class="api-badge api-err">API...</span>
+    <div class="live-badge"><div class="live-dot"></div>Live Analysis</div>
+    <div class="model-badge">XGBoost R²=0.9340</div>
+    <a href="map_page.html" class="map-badge">🗺️ Map View</a>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('overview',this)">📊 Overview</button>
+  <button class="nav-btn" onclick="showPage('heatmap',this)">🌡️ Heatmap</button>
+  <button class="nav-btn" onclick="showPage('patterns',this)">📈 Patterns</button>
+  <button class="nav-btn" onclick="showPage('weather',this)">🌤️ Weather</button>
+  <button class="nav-btn" onclick="showPage('prediction',this)">🔮 Prediction</button>
+  <button class="nav-btn" onclick="showPage('forecast',this)">📅 24h Forecast</button>
+  <button class="nav-btn" onclick="showPage('scenario',this)">⚙️ Scenario</button>
+  <button class="nav-btn" onclick="showPage('insights',this)">🧠 ML Insights</button>
+  <button class="nav-btn" onclick="showPage('calendar',this)">🗓️ Calendar</button>
+  <a href="map_page.html" class="nav-link">🗺️ Map View ↗</a>
+</nav>
+
+<div class="content">
+
+<!-- OVERVIEW -->
+<div class="page active" id="page-overview">
+  <!-- Map Banner -->
+  <div class="map-banner">
+    <div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px">🗺️ Interactive Traffic Map</div>
+      <div style="font-size:13px;color:var(--text2)">Live congestion markers · Route estimator · Spike predictor · Traffic heatmap</div>
+    </div>
+    <a href="map_page.html" class="map-btn">Open Map View →</a>
+  </div>
+
+  <div class="grid-4">
+    <div class="card kpi"><div class="kpi-val" id="kpi-peak" style="color:#38bdf8">--</div><div class="kpi-label">Peak Hour Volume</div><div class="kpi-delta up" id="kpi-peak-sub">Loading...</div></div>
+    <div class="card kpi"><div class="kpi-val" id="kpi-avg" style="color:#a855f7">--</div><div class="kpi-label">Avg Volume/hr</div><div class="kpi-delta">All time average</div></div>
+    <div class="card kpi"><div class="kpi-val" style="color:#22c55e">0.9340</div><div class="kpi-label">XGBoost R²</div><div class="kpi-delta down">MAE = 286.8 veh/hr</div></div>
+    <div class="card kpi"><div class="kpi-val" id="kpi-rec" style="color:#f97316">--</div><div class="kpi-label">Total Records</div><div class="kpi-delta">2012 → 2018</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">24-Hour Average Traffic Profile</div>
+      <div class="chart-wrap h280"><canvas id="chartHourly"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Congestion Level Distribution</div>
+      <div class="chart-wrap h280"><canvas id="chartDist"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2-1">
+    <div class="card">
+      <div class="card-title">Peak Congestion Windows</div>
+      <div id="peakWindows"><div style="padding:2rem;text-align:center;color:var(--text3)">Loading...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Risk Score</div>
+      <div style="text-align:center;padding:1rem">
+        <canvas id="chartRisk" width="160" height="160" style="display:inline-block"></canvas>
+        <div style="margin-top:12px">
+          <div style="font-size:36px;font-weight:700;font-family:var(--mono);color:#ef4444" id="riskNum">--</div>
+          <div style="font-size:12px;color:var(--text3)">Peak Hour Risk / 100</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HEATMAP -->
+<div class="page" id="page-heatmap">
+  <div class="card" style="margin-bottom:1.5rem">
+    <div class="card-title">Traffic Congestion Heatmap — Day × Hour <span>Avg vehicles/hr</span></div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;font-size:12px;color:var(--text3)">
+      <span>Low</span>
+      <div style="display:flex;gap:2px">
+        <div style="width:20px;height:14px;border-radius:3px;background:#1a3a5c"></div>
+        <div style="width:20px;height:14px;border-radius:3px;background:#1e7fa0"></div>
+        <div style="width:20px;height:14px;border-radius:3px;background:#eab308"></div>
+        <div style="width:20px;height:14px;border-radius:3px;background:#f97316"></div>
+        <div style="width:20px;height:14px;border-radius:3px;background:#ef4444"></div>
+      </div>
+      <span>High</span>
+      <span style="margin-left:auto;font-style:italic">Hover cells for details</span>
+    </div>
+    <div id="heatmapContainer"></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Congestion Frequency by Hour</div>
+      <div class="chart-wrap h250"><canvas id="chartHourCong"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Traffic Density by Day</div>
+      <div class="chart-wrap h250"><canvas id="chartDOW"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- PATTERNS -->
+<div class="page" id="page-patterns">
+  <div class="card" style="margin-bottom:1.5rem">
+    <div class="card-title">Weekday vs Weekend Traffic Patterns</div>
+    <div class="chart-wrap h320"><canvas id="chartWkWe"></canvas></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Monthly Traffic Volume Trends</div>
+      <div class="chart-wrap h250"><canvas id="chartMonthly"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Traffic by Day of Week</div>
+      <div class="chart-wrap h250"><canvas id="chartDayBar"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Key Traffic Insights</div>
+    <div class="grid-3" style="margin-bottom:0">
+      <div style="padding:1rem;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px">🌅 Morning Rush</div>
+        <ul class="info-list">
+          <li><div class="info-dot"></div>Peak 7–9 AM on weekdays</li>
+          <li><div class="info-dot"></div>67% higher than weekend AM</li>
+          <li><div class="info-dot"></div>Avg 3,600+ vehicles/hr</li>
+        </ul>
+      </div>
+      <div style="padding:1rem;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:600;color:var(--orange);margin-bottom:8px">🌆 Evening Rush</div>
+        <ul class="info-list">
+          <li><div class="info-dot" style="background:var(--orange)"></div>Peak 4–6 PM is worst period</li>
+          <li><div class="info-dot" style="background:var(--orange)"></div>Up to 5,800 vehicles/hr</li>
+          <li><div class="info-dot" style="background:var(--orange)"></div>Lasts ~3 hours on avg</li>
+        </ul>
+      </div>
+      <div style="padding:1rem;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:8px">🌙 Off-Peak</div>
+        <ul class="info-list">
+          <li><div class="info-dot" style="background:var(--green)"></div>12 AM – 5 AM: Free flow</li>
+          <li><div class="info-dot" style="background:var(--green)"></div>Under 600 vehicles/hr</li>
+          <li><div class="info-dot" style="background:var(--green)"></div>Best for heavy transport</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WEATHER -->
+<div class="page" id="page-weather">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Avg Traffic Volume by Weather</div>
+      <div class="chart-wrap h300"><canvas id="chartWeather"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Weather Impact Analysis</div>
+      <div id="weatherTable" style="margin-top:0.5rem"></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Temperature vs Traffic Volume</div>
+      <div class="chart-wrap h250"><canvas id="chartTemp"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Severe Weather Analysis</div>
+      <div style="margin-top:0.5rem">
+        <div style="margin-bottom:1rem;padding:1rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px">
+          <div style="font-weight:600;color:var(--red);margin-bottom:6px">❄️ Snow Conditions</div>
+          <div style="font-size:13px;color:var(--text2)">Traffic drops by <strong style="color:var(--red)">45%</strong> vs clear weather. Congestion paradoxically reduces but travel time increases.</div>
+        </div>
+        <div style="margin-bottom:1rem;padding:1rem;background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.2);border-radius:10px">
+          <div style="font-weight:600;color:var(--yellow);margin-bottom:6px">🌧️ Rain / Thunderstorm</div>
+          <div style="font-size:13px;color:var(--text2)">Volume reduces <strong style="color:var(--yellow)">26–35%</strong>. Rain suppresses non-essential travel.</div>
+        </div>
+        <div style="padding:1rem;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.2);border-radius:10px">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:6px">☁️ Fog / Mist</div>
+          <div style="font-size:13px;color:var(--text2)">Visibility issues cause <strong style="color:var(--accent)">15–19%</strong> volume reduction.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PREDICTION -->
+<div class="page" id="page-prediction">
+  <div class="grid-1-2">
+    <div class="card">
+      <div class="card-title">🔮 Live Congestion Predictor</div>
+      <div style="display:grid;gap:1rem">
+        <div class="form-group">
+          <label>Day of Week</label>
+          <select id="pred-dow">
+            <option value="0">Monday</option><option value="1">Tuesday</option>
+            <option value="2">Wednesday</option><option value="3">Thursday</option>
+            <option value="4">Friday</option><option value="5">Saturday</option>
+            <option value="6">Sunday</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Hour of Day</label>
+          <select id="pred-hour">
+            <option value="0">12:00 AM</option><option value="1">1:00 AM</option>
+            <option value="2">2:00 AM</option><option value="3">3:00 AM</option>
+            <option value="4">4:00 AM</option><option value="5">5:00 AM</option>
+            <option value="6">6:00 AM</option><option value="7" selected>7:00 AM</option>
+            <option value="8">8:00 AM</option><option value="9">9:00 AM</option>
+            <option value="10">10:00 AM</option><option value="11">11:00 AM</option>
+            <option value="12">12:00 PM</option><option value="13">1:00 PM</option>
+            <option value="14">2:00 PM</option><option value="15">3:00 PM</option>
+            <option value="16">4:00 PM</option><option value="17">5:00 PM</option>
+            <option value="18">6:00 PM</option><option value="19">7:00 PM</option>
+            <option value="20">8:00 PM</option><option value="21">9:00 PM</option>
+            <option value="22">10:00 PM</option><option value="23">11:00 PM</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Month</label>
+          <select id="pred-month">
+            <option value="1">January</option><option value="2">February</option>
+            <option value="3">March</option><option value="4">April</option>
+            <option value="5">May</option><option value="6" selected>June</option>
+            <option value="7">July</option><option value="8">August</option>
+            <option value="9">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Weather Condition</label>
+          <select id="pred-weather">
+            <option>Clear</option><option>Clouds</option><option>Rain</option>
+            <option>Snow</option><option>Mist</option><option>Drizzle</option>
+            <option>Thunderstorm</option><option>Fog</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Temperature (°C): <span id="tempVal" style="color:var(--accent)">15</span></label>
+          <input type="range" id="pred-temp" min="-20" max="40" value="15" oninput="document.getElementById('tempVal').textContent=this.value">
+        </div>
+        <div class="form-group">
+          <label>Rain (mm/h): <span id="rainVal" style="color:var(--accent)">0</span></label>
+          <input type="range" id="pred-rain" min="0" max="50" value="0" oninput="document.getElementById('rainVal').textContent=this.value">
+        </div>
+        <div class="form-group">
+          <label>Snow (mm/h): <span id="snowVal" style="color:var(--accent)">0</span></label>
+          <input type="range" id="pred-snow" min="0" max="20" value="0" oninput="document.getElementById('snowVal').textContent=this.value">
+        </div>
+        <button class="btn-predict" onclick="runPrediction()">🚦 Predict Congestion</button>
+        <a href="map_page.html" class="btn-secondary" style="text-align:center;text-decoration:none;display:block;padding:12px">🗺️ View on Map</a>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-title">Prediction Result</div>
+        <div class="result-big">
+          <div style="font-size:40px;font-weight:700;font-family:var(--mono)" id="resVolume">---</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:4px">vehicles / hour</div>
+          <div style="font-size:22px;font-weight:700;margin-top:12px" id="resLevel">Run prediction</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:4px">Risk: <span id="resRisk" style="font-family:var(--mono);color:var(--accent)">--</span>/100</div>
+          <div class="congestion-bar"><div class="congestion-fill" id="resFill" style="width:0%"></div></div>
+        </div>
+        <div style="margin-top:1rem">
+          <div class="section-title">Contributing Factors</div>
+          <ul class="info-list" id="resFactors"><li><div class="info-dot"></div>Run prediction to see factors</li></ul>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Risk Gauge</div>
+        <div style="text-align:center"><canvas id="chartGauge" height="140"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 24H FORECAST -->
+<div class="page" id="page-forecast">
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title">24-Hour Congestion Forecast</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1rem">
+      <div class="form-group">
+        <label>Day</label>
+        <select id="fc-dow">
+          <option value="0">Monday</option><option value="1">Tuesday</option>
+          <option value="2">Wednesday</option><option value="3">Thursday</option>
+          <option value="4">Friday</option><option value="5">Saturday</option>
+          <option value="6">Sunday</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Month</label>
+        <select id="fc-month">
+          <option value="1">Jan</option><option value="2">Feb</option>
+          <option value="3">Mar</option><option value="4">Apr</option>
+          <option value="5">May</option><option value="6" selected>Jun</option>
+          <option value="7">Jul</option><option value="8">Aug</option>
+          <option value="9">Sep</option><option value="10">Oct</option>
+          <option value="11">Nov</option><option value="12">Dec</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Weather</label>
+        <select id="fc-weather">
+          <option>Clear</option><option>Clouds</option><option>Rain</option>
+          <option>Snow</option><option>Mist</option><option>Thunderstorm</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Temp: <span id="fcTempVal" style="color:var(--accent)">15</span>°C</label>
+        <input type="range" id="fc-temp" min="-20" max="40" value="15" oninput="document.getElementById('fcTempVal').textContent=this.value">
+      </div>
+    </div>
+    <button class="btn-predict" onclick="runForecast()">📅 Generate 24h Forecast</button>
+  </div>
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title">Hourly Volume Forecast <span id="fcSubtitle"></span></div>
+    <div class="chart-wrap h320"><canvas id="chartForecast"></canvas></div>
+  </div>
+  <div class="grid-3" id="forecastSummary"></div>
+</div>
+
+<!-- SCENARIO -->
+<div class="page" id="page-scenario">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">⚙️ Scenario Simulator</div>
+      <div style="display:grid;gap:1.2rem">
+        <div class="form-group">
+          <label>Base Day</label>
+          <select id="sc-dow">
+            <option value="0">Monday</option><option value="1">Tuesday</option>
+            <option value="2">Wednesday</option><option value="3">Thursday</option>
+            <option value="4">Friday</option><option value="5">Saturday</option>
+            <option value="6">Sunday</option>
+          </select>
+        </div>
+        <div>
+          <div class="slider-label"><span>🌧️ Weather Severity</span><span class="slider-val" id="wSevVal">0%</span></div>
+          <input type="range" id="sc-wsev" min="0" max="100" value="0" oninput="document.getElementById('wSevVal').textContent=this.value+'%'">
+        </div>
+        <div>
+          <div class="slider-label"><span>🎪 Special Event</span><span class="slider-val" id="sEvtVal">0%</span></div>
+          <input type="range" id="sc-sevt" min="0" max="100" value="0" oninput="document.getElementById('sEvtVal').textContent=this.value+'%'">
+        </div>
+        <div>
+          <div class="slider-label"><span>🚧 Road Incident</span><span class="slider-val" id="incVal">0%</span></div>
+          <input type="range" id="sc-inc" min="0" max="100" value="0" oninput="document.getElementById('incVal').textContent=this.value+'%'">
+        </div>
+        <div>
+          <div class="slider-label"><span>🏠 Remote Work</span><span class="slider-val" id="rwVal">0%</span></div>
+          <input type="range" id="sc-rw" min="0" max="100" value="0" oninput="document.getElementById('rwVal').textContent=this.value+'%'">
+        </div>
+        <button class="btn-predict" onclick="runScenario()">🔄 Simulate</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Scenario Impact</div>
+      <div class="chart-wrap h320"><canvas id="chartScenario"></canvas></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;text-align:center">
+        <div style="background:var(--bg3);border-radius:8px;padding:1rem">
+          <div style="font-size:11px;color:var(--text3)">BASE AVG</div>
+          <div style="font-size:24px;font-weight:700;font-family:var(--mono);color:var(--accent)" id="scBaseAvg">--</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:1rem">
+          <div style="font-size:11px;color:var(--text3)">MODIFIED AVG</div>
+          <div style="font-size:24px;font-weight:700;font-family:var(--mono);color:var(--orange)" id="scModAvg">--</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ML INSIGHTS -->
+<div class="page" id="page-insights">
+  <div class="grid-3" style="margin-bottom:1.5rem">
+    <div class="card kpi"><div class="kpi-val" style="color:#38bdf8">0.9340</div><div class="kpi-label">XGBoost R²</div><div class="kpi-delta down">Best ML Model</div></div>
+    <div class="card kpi"><div class="kpi-val" style="color:#22c55e">286.8</div><div class="kpi-label">MAE (veh/hr)</div><div class="kpi-delta down">XGBoost</div></div>
+    <div class="card kpi"><div class="kpi-val" style="color:#a855f7">85.6%</div><div class="kpi-label">Class Accuracy</div><div class="kpi-delta down">LOW/MED/HIGH/SEV</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Feature Importance — XGBoost</div>
+      <div id="featureImportance"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Model Benchmark Results</div>
+      <div id="benchmarkTable"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CALENDAR -->
+<div class="page" id="page-calendar">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Peak Traffic Risk Calendar <span>Last 30 days</span></div>
+      <div id="calendarGrid"></div>
+      <div style="display:flex;gap:12px;margin-top:1rem;font-size:11px;color:var(--text3);flex-wrap:wrap">
+        <span>🟢 LOW</span><span>🟡 MEDIUM</span><span>🟠 HIGH</span><span>🔴 SEVERE</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Hourly Risk Score</div>
+      <div class="chart-wrap h280"><canvas id="chartRiskHourly"></canvas></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end content -->
+
+<script>
+const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000/api'
+  : 'https://TERA-RAILWAY-URL.railway.app/api';
+
+async function fetchAPI(ep, method='GET', body=null){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  try{ const r=await fetch(API+ep,opts); return await r.json(); }
+  catch(e){ return null; }
+}
+
+const COPTS={
+  responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},tooltip:{backgroundColor:'#1a2235',borderColor:'rgba(99,179,237,0.3)',borderWidth:1}},
+  scales:{
+    x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(99,179,237,0.05)'},border:{display:false}},
+    y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(99,179,237,0.07)'},border:{display:false}}
+  }
+};
+
+const DEMO=[412,298,201,156,189,456,1823,3812,4156,3654,3201,3456,3678,3234,3012,3456,4234,4876,4123,3234,2456,1876,1234,712];
+const HL=Array.from({length:24},(_,i)=>i<12?`${i===0?12:i}am`:`${i===12?12:i-12}pm`);
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+function cong(v){
+  if(v<1000) return {level:'LOW',    color:'#22c55e',risk:Math.round(v/1000*25)};
+  if(v<3000) return {level:'MEDIUM', color:'#eab308',risk:Math.round(25+(v-1000)/2000*25)};
+  if(v<5000) return {level:'HIGH',   color:'#f97316',risk:Math.round(50+(v-3000)/2000*25)};
+  return             {level:'SEVERE', color:'#ef4444',risk:Math.min(100,Math.round(75+(v-5000)/2000*25))};
+}
+
+// ── CHECK API ─────────────────────────────────────────────────
+async function checkAPI(){
+  const d=await fetchAPI('/overview');
+  const b=document.getElementById('apiBadge');
+  if(d){b.textContent='API Connected';b.className='api-badge api-ok';}
+  else{b.textContent='Demo Mode';b.className='api-badge api-err';}
+  return d;
+}
+
+// ── OVERVIEW ─────────────────────────────────────────────────
+async function initOverview(){
+  const data=await fetchAPI('/overview');
+  const hourly=data?data.hourly_avg:DEMO;
+
+  if(data){
+    document.getElementById('kpi-peak').textContent=data.peak_volume.toLocaleString();
+    document.getElementById('kpi-peak-sub').textContent=`Peak at ${data.peak_hour}:00`;
+    document.getElementById('kpi-avg').textContent=data.avg_volume.toLocaleString();
+    document.getElementById('kpi-rec').textContent=(data.total_records/1000).toFixed(0)+'K';
+    document.getElementById('riskNum').textContent=cong(data.peak_volume).risk;
+  }
+
+  new Chart(document.getElementById('chartHourly'),{
+    type:'line',
+    data:{labels:HL,datasets:[{label:'Avg Volume',data:hourly,borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,0.1)',fill:true,tension:0.4,pointRadius:3,borderWidth:2}]},
+    options:{...COPTS}
+  });
+
+  const dist=data?data.congestion_dist:{LOW:28,MEDIUM:34,HIGH:22,SEVERE:16};
+  new Chart(document.getElementById('chartDist'),{
+    type:'doughnut',
+    data:{labels:['LOW','MEDIUM','HIGH','SEVERE'],datasets:[{data:[dist.LOW||28,dist.MEDIUM||34,dist.HIGH||22,dist.SEVERE||16],backgroundColor:['rgba(34,197,94,0.8)','rgba(234,179,8,0.8)','rgba(249,115,22,0.8)','rgba(239,68,68,0.8)'],borderColor:['#22c55e','#eab308','#f97316','#ef4444'],borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:11},padding:12}}}}
+  });
+
+  const peaks=await fetchAPI('/peak_windows');
+  const pk=peaks||[{hour:8,volume:4156,color:'#ef4444',risk:87},{hour:17,volume:4876,color:'#ef4444',risk:93},{hour:7,volume:3812,color:'#f97316',risk:71},{hour:16,volume:4234,color:'#ef4444',risk:81},{hour:18,volume:4123,color:'#f97316',risk:78},{hour:9,volume:3654,color:'#f97316',risk:66}];
+  document.getElementById('peakWindows').innerHTML=pk.map(p=>{
+    const lbl=p.hour<12?`${p.hour===0?12:p.hour}:00 AM`:`${p.hour===12?12:p.hour-12}:00 PM`;
+    return `<div class="peak-item"><div class="peak-time">${lbl}</div><div class="peak-bar-wrap"><div class="peak-bar" style="width:${p.risk}%;background:${p.color}"></div></div><div class="peak-vol">${p.volume.toLocaleString()}</div></div>`;
+  }).join('');
+
+  const riskVal=peaks?cong(pk[0].volume).risk:87;
+  new Chart(document.getElementById('chartRisk'),{
+    type:'doughnut',
+    data:{datasets:[{data:[riskVal,100-riskVal],backgroundColor:['#ef4444','rgba(239,68,68,0.1)'],borderWidth:0,cutout:'78%'}]},
+    options:{responsive:false,plugins:{legend:{display:false},tooltip:{enabled:false}}}
+  });
+}
+
+// ── HEATMAP ───────────────────────────────────────────────────
+async function initHeatmap(){
+  const data=await fetchAPI('/heatmap');
+  const dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  let html=`<div style="display:grid;grid-template-columns:70px repeat(24,1fr);gap:3px;margin-bottom:4px"><div></div>${HL.map(h=>`<div style="font-size:10px;color:var(--text3);text-align:center">${h}</div>`).join('')}</div>`;
+
+  for(let dow=0;dow<7;dow++){
+    html+=`<div style="display:grid;grid-template-columns:70px repeat(24,1fr);gap:3px;margin-bottom:3px"><div style="font-size:11px;color:var(--text3);display:flex;align-items:center">${dayNames[dow]}</div>`;
+    for(let hour=0;hour<24;hour++){
+      let vol=0,color='#1a3a5c';
+      if(data){const cell=data.find(d=>d.dow===dow&&d.hour===hour);if(cell){vol=cell.volume;color=cell.color;}}
+      else{vol=Math.round(DEMO[hour]*(dow>=5?0.6:1)*(0.85+Math.random()*0.3));color=cong(vol).color;}
+      const alpha=Math.min(0.95,0.2+vol/7000*0.8);
+      html+=`<div class="hm-cell" style="background:${color}${Math.round(alpha*255).toString(16).padStart(2,'0')}" title="${dayNames[dow]} ${hour}:00 — ${vol.toLocaleString()} veh/hr">${vol>500?Math.round(vol/100)/10+'k':vol}</div>`;
+    }
+    html+='</div>';
+  }
+  document.getElementById('heatmapContainer').innerHTML=html;
+
+  const hourVols=Array.from({length:24},(_,h)=>{
+    if(data){const cells=data.filter(d=>d.hour===h);return cells.length?Math.round(cells.reduce((s,c)=>s+c.volume,0)/cells.length):0;}
+    return DEMO[h];
+  });
+  new Chart(document.getElementById('chartHourCong'),{type:'bar',data:{labels:HL,datasets:[{label:'Avg Volume',data:hourVols,backgroundColor:hourVols.map(v=>cong(v).color+'99'),borderRadius:4,borderSkipped:false}]},options:{...COPTS}});
+
+  const dowVols=Array.from({length:7},(_,d)=>{
+    if(data){const cells=data.filter(c=>c.dow===d);return cells.length?Math.round(cells.reduce((s,c)=>s+c.volume,0)/cells.length):0;}
+    return d<5?2800+Math.random()*500:1600+Math.random()*300;
+  });
+  new Chart(document.getElementById('chartDOW'),{type:'bar',data:{labels:dayNames,datasets:[{label:'Avg Volume',data:dowVols,backgroundColor:['#38bdf8','#38bdf8','#38bdf8','#38bdf8','#38bdf8','#a855f7','#a855f7'],borderRadius:6,borderSkipped:false}]},options:{...COPTS}});
+}
+
+// ── PATTERNS ──────────────────────────────────────────────────
+async function initPatterns(){
+  const data=await fetchAPI('/patterns');
+  const wk=data?data.weekday:DEMO.map(v=>Math.round(v*1.25));
+  const we=data?data.weekend:DEMO.map(v=>Math.round(v*0.65));
+  new Chart(document.getElementById('chartWkWe'),{type:'line',data:{labels:HL,datasets:[{label:'Weekday',data:wk,borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,0.08)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:3},{label:'Weekend',data:we,borderColor:'#a855f7',backgroundColor:'rgba(168,85,247,0.08)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:3}]},options:{...COPTS}});
+  const mo=data?data.monthly:[2800,2750,2900,3100,3200,3400,3300,3250,3100,2950,2800,2600];
+  new Chart(document.getElementById('chartMonthly'),{type:'line',data:{labels:MONTHS,datasets:[{label:'Avg Volume',data:mo,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.1)',fill:true,tension:0.4,borderWidth:2,pointRadius:4}]},options:{...COPTS}});
+  const dw=data?data.daily:[2900,2850,2800,2780,2950,1800,1650];
+  new Chart(document.getElementById('chartDayBar'),{type:'bar',data:{labels:DAYS,datasets:[{label:'Avg Volume',data:dw,backgroundColor:dw.map((_,i)=>i<5?'rgba(56,189,248,0.7)':'rgba(168,85,247,0.7)'),borderRadius:6,borderSkipped:false}]},options:{...COPTS}});
+}
+
+// ── WEATHER ───────────────────────────────────────────────────
+async function initWeather(){
+  const data=await fetchAPI('/weather');
+  const byW=data?data.by_weather:[{weather:'Clear',avg_volume:3245},{weather:'Clouds',avg_volume:3156},{weather:'Rain',avg_volume:2456},{weather:'Snow',avg_volume:1234},{weather:'Mist',avg_volume:2789},{weather:'Drizzle',avg_volume:2634},{weather:'Thunderstorm',avg_volume:1876},{weather:'Fog',avg_volume:2234}];
+  new Chart(document.getElementById('chartWeather'),{type:'bar',data:{labels:byW.map(d=>d.weather),datasets:[{label:'Avg Volume',data:byW.map(d=>d.avg_volume),backgroundColor:['#38bdf8bb','#94a3b8bb','#3b82f6bb','#8b5cf6bb','#64748bbb','#0ea5e9bb','#6366f1bb','#475569bb'],borderRadius:6,borderSkipped:false}]},options:{...COPTS,indexAxis:'y'}});
+  const maxVol=Math.max(...byW.map(d=>d.avg_volume));
+  document.getElementById('weatherTable').innerHTML=byW.map(d=>{
+    const pct=Math.round(d.avg_volume/maxVol*100);
+    const c=cong(d.avg_volume);
+    return `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px"><span style="color:var(--text2)">${d.weather}</span><span style="font-family:var(--mono);color:var(--accent)">${d.avg_volume.toLocaleString()}</span></div><div style="height:6px;background:var(--bg3);border-radius:3px"><div style="height:6px;width:${pct}%;background:${c.color};border-radius:3px"></div></div></div>`;
+  }).join('');
+  const byT=data?data.by_temp:{};
+  const tl=Object.keys(byT).length?Object.keys(byT):['-40to-10','-10to0','0to10','10to20','20to30','30+'];
+  const tv=Object.values(byT).length?Object.values(byT):[1200,1800,2600,3200,2900,2400];
+  new Chart(document.getElementById('chartTemp'),{type:'line',data:{labels:tl,datasets:[{label:'Avg Volume',data:tv,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.1)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#f97316'}]},options:{...COPTS}});
+}
+
+// ── PREDICTION ────────────────────────────────────────────────
+let gaugeChart=null;
+async function runPrediction(){
+  const hour=+document.getElementById('pred-hour').value;
+  const dow=+document.getElementById('pred-dow').value;
+  const month=+document.getElementById('pred-month').value;
+  const temp_c=+document.getElementById('pred-temp').value;
+  const rain=+document.getElementById('pred-rain').value;
+  const snow=+document.getElementById('pred-snow').value;
+  const weather=document.getElementById('pred-weather').value;
+
+  const btn=document.querySelector('#page-prediction .btn-predict');
+  btn.textContent='⏳ Predicting...';
+
+  let d=await fetchAPI('/predict','POST',{hour,dow,month,temp_c,rain,snow,clouds:40,weather});
+  if(!d){
+    const vol=Math.max(0,Math.round(DEMO[hour]*(dow>=5?0.6:1)*(1-rain*0.01)*(1-snow*0.03)));
+    d={...cong(vol),volume:vol,factors:['Demo mode — start api.py for live predictions']};
+  }
+
+  const colMap={LOW:'#22c55e',MEDIUM:'#eab308',HIGH:'#f97316',SEVERE:'#ef4444'};
+  const lblMap={LOW:'🟢 LOW — Free Flow',MEDIUM:'🟡 MEDIUM — Light',HIGH:'🟠 HIGH — Moderate',SEVERE:'🔴 SEVERE — Heavy'};
+  document.getElementById('resVolume').textContent=d.volume.toLocaleString();
+  document.getElementById('resVolume').style.color=d.color||colMap[d.level];
+  document.getElementById('resLevel').textContent=lblMap[d.level]||d.level;
+  document.getElementById('resLevel').style.color=d.color||colMap[d.level];
+  document.getElementById('resRisk').textContent=d.risk;
+  document.getElementById('resFill').style.width=d.risk+'%';
+  document.getElementById('resFill').style.background=d.color||colMap[d.level];
+  document.getElementById('resFactors').innerHTML=(d.factors||[]).map(f=>`<li><div class="info-dot"></div>${f}</li>`).join('');
+
+  if(gaugeChart) gaugeChart.destroy();
+  gaugeChart=new Chart(document.getElementById('chartGauge'),{
+    type:'doughnut',
+    data:{datasets:[{data:[d.risk,100-d.risk],backgroundColor:[d.color||'#ef4444','rgba(30,45,71,0.8)'],borderWidth:0,cutout:'72%',rotation:-90,circumference:180}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}}}
+  });
+  btn.textContent='🚦 Predict Congestion';
+}
+
+function initPrediction(){ setTimeout(runPrediction,300); }
+
+// ── 24H FORECAST ─────────────────────────────────────────────
+let forecastChart=null;
+async function runForecast(){
+  const dow=+document.getElementById('fc-dow').value;
+  const month=+document.getElementById('fc-month').value;
+  const temp_c=+document.getElementById('fc-temp').value;
+  const weather=document.getElementById('fc-weather').value;
+
+  let data=await fetchAPI('/forecast24','POST',{dow,month,temp_c,rain:0,snow:0,clouds:40,weather});
+  if(!data) data=Array.from({length:24},(_,h)=>{const vol=Math.max(0,Math.round(DEMO[h]*(dow>=5?0.6:1)));return{hour:h,volume:vol,...cong(vol)};});
+
+  if(forecastChart) forecastChart.destroy();
+  forecastChart=new Chart(document.getElementById('chartForecast'),{
+    type:'bar',
+    data:{labels:HL,datasets:[{label:'Predicted Volume',data:data.map(d=>d.volume),backgroundColor:data.map(d=>(d.color||'#38bdf8')+'bb'),borderRadius:5,borderSkipped:false}]},
+    options:{...COPTS,plugins:{...COPTS.plugins,tooltip:{callbacks:{label:c=>{const d2=data[c.dataIndex];return `${c.raw.toLocaleString()} veh/hr — ${d2.level} (Risk:${d2.risk}/100)`;}}}}}
+  });
+
+  const peak=data.reduce((a,b)=>a.volume>b.volume?a:b);
+  const quiet=data.reduce((a,b)=>a.volume<b.volume?a:b);
+  const severe=data.filter(d=>d.level==='SEVERE').length;
+  document.getElementById('forecastSummary').innerHTML=`
+    <div class="card kpi"><div class="kpi-val" style="color:#ef4444">${peak.volume.toLocaleString()}</div><div class="kpi-label">Peak Volume</div><div class="kpi-delta up">${peak.hour}:00 — SEVERE</div></div>
+    <div class="card kpi"><div class="kpi-val" style="color:#22c55e">${quiet.volume.toLocaleString()}</div><div class="kpi-label">Quietest Hour</div><div class="kpi-delta down">${quiet.hour}:00 — LOW</div></div>
+    <div class="card kpi"><div class="kpi-val" style="color:#f97316">${severe}</div><div class="kpi-label">Severe Hours</div><div class="kpi-delta">today</div></div>`;
+}
+function initForecast(){ runForecast(); }
+
+// ── SCENARIO ──────────────────────────────────────────────────
+let scenarioChart=null;
+async function runScenario(){
+  const dow=+document.getElementById('sc-dow').value;
+  const wsev=+document.getElementById('sc-wsev').value;
+  const sevt=+document.getElementById('sc-sevt').value;
+  const inc=+document.getElementById('sc-inc').value;
+  const rw=+document.getElementById('sc-rw').value;
+
+  let d=await fetchAPI('/scenario','POST',{dow,month:6,temp_c:15,rain:wsev*0.3,snow:0,clouds:wsev,weather:'Clouds',weather_severity:wsev,special_event:sevt,incident:inc,remote_work:rw});
+  if(!d){
+    const base=DEMO.map(v=>Math.round(v*(dow>=5?0.6:1)));
+    const mod=base.map(v=>Math.round(v*(1-wsev/200)*(1+sevt/250)*(1+inc/300)*(1-rw/400)));
+    d={base,modified:mod,base_avg:Math.round(base.reduce((s,v)=>s+v,0)/24),mod_avg:Math.round(mod.reduce((s,v)=>s+v,0)/24)};
+  }
+
+  if(scenarioChart) scenarioChart.destroy();
+  scenarioChart=new Chart(document.getElementById('chartScenario'),{
+    type:'line',
+    data:{labels:HL,datasets:[
+      {label:'Base',data:d.base,borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,0.05)',fill:true,tension:0.4,borderWidth:2,pointRadius:2},
+      {label:'Modified',data:d.modified,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:2,borderDash:[5,3]}
+    ]},
+    options:{...COPTS}
+  });
+  document.getElementById('scBaseAvg').textContent=d.base_avg.toLocaleString();
+  document.getElementById('scModAvg').textContent=d.mod_avg.toLocaleString();
+  document.getElementById('scModAvg').style.color=d.mod_avg>d.base_avg?'#ef4444':'#22c55e';
+}
+function initScenario(){ runScenario(); }
+
+// ── ML INSIGHTS ───────────────────────────────────────────────
+async function initInsights(){
+  const fi=await fetchAPI('/feature_importance');
+  const fiData=fi||[{feature:'Hour of Day',importance:0.3124},{feature:'Rush Hour',importance:0.2234},{feature:'Day of Week',importance:0.1456},{feature:'Is Weekend',importance:0.0987},{feature:'Temperature',importance:0.0756},{feature:'Month',importance:0.0534},{feature:'Hour (sin)',importance:0.0312},{feature:'Weather Type',importance:0.0234},{feature:'Rainfall',importance:0.0187},{feature:'Cloud Cover',importance:0.0176}];
+  const maxFI=Math.max(...fiData.map(d=>d.importance));
+  const colors=['#38bdf8','#a855f7','#ef4444','#22c55e','#eab308','#f97316','#ec4899','#06b6d4','#84cc16','#f43f5e'];
+  document.getElementById('featureImportance').innerHTML=fiData.slice(0,10).map((d,i)=>`
+    <div class="fi-item">
+      <div class="fi-header"><span style="color:var(--text2)">${d.feature}</span><span class="fi-pct">${(d.importance*100).toFixed(1)}%</span></div>
+      <div class="fi-bar-bg"><div class="fi-bar" style="width:${Math.round(d.importance/maxFI*100)}%;background:${colors[i%colors.length]}"></div></div>
+    </div>`).join('');
+
+  const bench=[
+    {model:'XGBoost',r2:'0.9340',mae:'286.8',cls:'85.6%',tag:'tag-severe'},
+    {model:'LightGBM',r2:'0.9324',mae:'286.5',cls:'85.8%',tag:'tag-severe'},
+    {model:'Grad. Boost',r2:'0.9260',mae:'322.7',cls:'84.3%',tag:'tag-high'},
+    {model:'Random Forest',r2:'0.9228',mae:'310.7',cls:'84.3%',tag:'tag-high'},
+    {model:'Decision Tree',r2:'0.9212',mae:'306.8',cls:'85.4%',tag:'tag-high'},
+    {model:'KNN',r2:'0.8948',mae:'416.1',cls:'78.3%',tag:'tag-medium'},
+    {model:'Linear Reg.',r2:'0.7849',mae:'702.3',cls:'62.3%',tag:'tag-low'},
+  ];
+  document.getElementById('benchmarkTable').innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <tr style="border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:8px;color:var(--text3)">Model</th>
+        <th style="text-align:right;padding:8px;color:var(--text3)">R²</th>
+        <th style="text-align:right;padding:8px;color:var(--text3)">MAE</th>
+        <th style="text-align:right;padding:8px;color:var(--text3)">ClassAcc</th>
+      </tr>
+      ${bench.map(b=>`<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px;color:var(--text2)">${b.model}</td>
+        <td style="padding:8px;text-align:right;font-family:var(--mono);color:var(--accent)">${b.r2}</td>
+        <td style="padding:8px;text-align:right;font-family:var(--mono);color:var(--text)">${b.mae}</td>
+        <td style="padding:8px;text-align:right"><span class="tag ${b.tag}">${b.cls}</span></td>
+      </tr>`).join('')}
+    </table>`;
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────
+async function initCalendar(){
+  const risks=await fetchAPI('/congestion_risk');
+  const today=new Date();
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html=`<div class="cal-grid" style="margin-bottom:8px">${dayNames.map(d=>`<div class="cal-day-name">${d}</div>`).join('')}</div><div class="cal-grid">`;
+  const startDate=new Date(today);startDate.setDate(today.getDate()-29);
+  const startDow=startDate.getDay();
+  for(let i=0;i<startDow;i++) html+=`<div style="aspect-ratio:1"></div>`;
+  for(let i=0;i<30;i++){
+    const d=new Date(startDate);d.setDate(startDate.getDate()+i);
+    const isWE=d.getDay()===0||d.getDay()===6;
+    const vol=Math.round((isWE?1600:2800)+Math.sin(i*1.7)*400+Math.cos(i*2.3)*200);
+    const c=cong(vol);
+    const alpha=0.2+Math.min(0.7,vol/7000);
+    html+=`<div class="cal-cell" style="background:${c.color}${Math.round(alpha*255).toString(16).padStart(2,'0')}" title="${d.toDateString()}: ${vol.toLocaleString()} avg — ${c.level}">
+      <div style="font-weight:600;font-size:13px;color:${c.color}">${d.getDate()}</div>
+      <div style="font-size:8px;color:rgba(255,255,255,0.6)">${c.level}</div>
+    </div>`;
+  }
+  html+='</div>';
+  document.getElementById('calendarGrid').innerHTML=html;
+
+  const riskData=risks?Object.values(risks):DEMO.map(v=>cong(v).risk);
+  new Chart(document.getElementById('chartRiskHourly'),{
+    type:'bar',
+    data:{labels:HL,datasets:[{label:'Risk Score',data:riskData,backgroundColor:riskData.map(r=>r>=75?'#ef4444':r>=50?'#f97316':r>=25?'#eab308':'#22c55e'),borderRadius:4,borderSkipped:false}]},
+    options:{...COPTS,scales:{...COPTS.scales,y:{...COPTS.scales.y,max:100}}}
+  });
+}
+
+// ── PAGE SWITCHING ────────────────────────────────────────────
+const pageInits={overview:initOverview,heatmap:initHeatmap,patterns:initPatterns,weather:initWeather,prediction:initPrediction,forecast:initForecast,scenario:initScenario,insights:initInsights,calendar:initCalendar};
+const initialized={};
+
+function showPage(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(!initialized[name]){initialized[name]=true;setTimeout(()=>pageInits[name]&&pageInits[name](),50);}
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+initialized['overview']=true;
+checkAPI().then(()=>setTimeout(initOverview,100));
+</script>
+</body>
+</html>

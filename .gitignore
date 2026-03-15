@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+*.pth
+*.pkl
+*.h5
+models/mstn_best.pth
+models/mstn_fixed2.pth
+models/mstn_bench_best.pth
+models/mstn_explain.pth
+models/mstn_proper_best.pth
+.env
+*.csv
+node_modules
