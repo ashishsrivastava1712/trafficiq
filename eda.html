@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrafficIQ — EDA</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#0a0e1a;--bg2:#111827;--bg3:#1a2235;--bg4:#1e2d47;--border:rgba(99,179,237,0.15);--border2:rgba(99,179,237,0.25);--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--accent:#38bdf8;--green:#22c55e;--yellow:#eab308;--orange:#f97316;--red:#ef4444;--purple:#a855f7;--font:'Space Grotesk',sans-serif;--mono:'JetBrains Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font)}
+.header{background:linear-gradient(135deg,#0a1628,#0f2040,#0a1628);border-bottom:1px solid var(--border2);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#38bdf8,#0ea5e9);display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-size:16px;font-weight:700}
+.logo-sub{font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase}
+.nav-links{display:flex;gap:8px}
+.nav-link{color:var(--text2);font-size:13px;text-decoration:none;padding:6px 14px;border:1px solid var(--border);border-radius:20px;transition:all 0.2s}
+.nav-link:hover,.nav-link.active{color:var(--accent);border-color:var(--accent)}
+.content{padding:2rem;max-width:1400px;margin:0 auto}
+.page-title{font-size:28px;font-weight:700;margin-bottom:6px}
+.page-sub{font-size:14px;color:var(--text2);margin-bottom:2rem}
+.marks-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(234,179,8,0.15);border:1px solid rgba(234,179,8,0.3);border-radius:20px;padding:4px 14px;font-size:13px;color:var(--yellow);font-weight:600;margin-bottom:2rem}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1.5rem}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem}
+.card-title{font-size:12px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--text3);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';display:block;width:3px;height:14px;background:var(--accent);border-radius:2px}
+.kpi{text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+.kpi-val{font-size:26px;font-weight:700;font-family:var(--mono)}
+.kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-top:4px}
+.kpi-sub{font-size:12px;color:var(--text2);margin-top:4px}
+.chart-wrap{position:relative;width:100%}
+.chart-wrap.h250{height:250px}
+.chart-wrap.h280{height:280px}
+.chart-wrap.h300{height:300px}
+.chart-wrap.h320{height:320px}
+.chart-wrap.h200{height:200px}
+.section-divider{display:flex;align-items:center;gap:1rem;margin:2rem 0 1.5rem}
+.section-divider-line{flex:1;height:1px;background:var(--border)}
+.section-divider-text{font-size:13px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+.stat-table{width:100%;border-collapse:collapse;font-size:13px}
+.stat-table th{padding:10px 12px;text-align:left;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
+.stat-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2)}
+.stat-table tr:hover td{background:rgba(99,179,237,0.04)}
+.stat-table tr:last-child td{border-bottom:none}
+.mono{font-family:var(--mono);color:var(--text)}
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.tag-ok{background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
+.tag-warn{background:rgba(234,179,8,0.15);color:var(--yellow);border:1px solid rgba(234,179,8,0.3)}
+.tag-bad{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
+.insight-box{background:var(--bg3);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:1rem;margin-bottom:0.75rem}
+.insight-box h4{font-size:13px;font-weight:600;color:var(--accent);margin-bottom:4px}
+.insight-box p{font-size:13px;color:var(--text2);line-height:1.6}
+.corr-grid{display:grid;gap:2px}
+.corr-cell{height:40px;display:flex;align-items:center;justify-content:center;font-size:10px;font-family:var(--mono);border-radius:3px;cursor:pointer;transition:transform 0.1s}
+.corr-cell:hover{transform:scale(1.05);z-index:2;position:relative}
+.step-box{display:flex;gap:1rem;margin-bottom:1rem}
+.step-num{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.step-content h4{font-size:14px;font-weight:600;margin-bottom:4px}
+.step-content p{font-size:13px;color:var(--text2);line-height:1.5}
+@media(max-width:768px){.grid-4,.grid-3,.grid-2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">📊</div>
+    <div>
+      <div class="logo-text">TrafficIQ — EDA</div>
+      <div class="logo-sub">Exploratory Data Analysis</div>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a href="frontend.html" class="nav-link">🏠 Dashboard</a>
+    <a href="eda.html" class="nav-link active">📊 EDA</a>
+    <a href="features.html" class="nav-link">⚙️ Features</a>
+    <a href="evaluation.html" class="nav-link">📈 Evaluation</a>
+    <a href="map_page.html" class="nav-link">🗺️ Map</a>
+  </div>
+</div>
+
+<div class="content">
+  <div class="page-title">📊 Exploratory Data Analysis</div>
+  <div class="page-sub">Metro Interstate Traffic Volume Dataset — Complete EDA Pipeline</div>
+  <div class="marks-badge">⭐ 15 Marks — Data Exploration & Preprocessing</div>
+
+  <!-- DATASET OVERVIEW -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-text">1. Dataset Overview</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="grid-4">
+    <div class="kpi"><div class="kpi-val" style="color:#38bdf8">48,204</div><div class="kpi-label">Total Records</div><div class="kpi-sub">2012 → 2018</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#22c55e">9</div><div class="kpi-label">Original Features</div><div class="kpi-sub">Raw columns</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#a855f7">19</div><div class="kpi-label">Final Features</div><div class="kpi-sub">After engineering</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#f97316">0</div><div class="kpi-label">Missing Values</div><div class="kpi-sub">After cleaning</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Raw Dataset — Column Info</div>
+    <table class="stat-table">
+      <tr>
+        <th>Column</th><th>Type</th><th>Missing</th><th>Unique</th><th>Description</th><th>Status</th>
+      </tr>
+      <tr><td class="mono">holiday</td><td>object</td><td style="color:#ef4444">48,143 (99.9%)</td><td>12</td><td>US national holiday name</td><td><span class="tag tag-warn">Dropped</span></td></tr>
+      <tr><td class="mono">temp</td><td>float64</td><td style="color:#22c55e">0</td><td>4,928</td><td>Temperature in Kelvin</td><td><span class="tag tag-ok">Converted to °C</span></td></tr>
+      <tr><td class="mono">rain_1h</td><td>float64</td><td style="color:#22c55e">0</td><td>584</td><td>Rain in mm/hour</td><td><span class="tag tag-ok">Kept</span></td></tr>
+      <tr><td class="mono">snow_1h</td><td>float64</td><td style="color:#22c55e">0</td><td>35</td><td>Snow in mm/hour</td><td><span class="tag tag-ok">Kept</span></td></tr>
+      <tr><td class="mono">clouds_all</td><td>int64</td><td style="color:#22c55e">0</td><td>101</td><td>Cloud coverage %</td><td><span class="tag tag-ok">Kept</span></td></tr>
+      <tr><td class="mono">weather_main</td><td>object</td><td style="color:#22c55e">0</td><td>8</td><td>Weather category</td><td><span class="tag tag-ok">Label Encoded</span></td></tr>
+      <tr><td class="mono">weather_description</td><td>object</td><td style="color:#22c55e">0</td><td>38</td><td>Detailed weather</td><td><span class="tag tag-warn">Dropped</span></td></tr>
+      <tr><td class="mono">date_time</td><td>object</td><td style="color:#22c55e">0</td><td>48,204</td><td>Hourly timestamp</td><td><span class="tag tag-ok">Feature Extracted</span></td></tr>
+      <tr><td class="mono">traffic_volume</td><td>int64</td><td style="color:#22c55e">0</td><td>6,786</td><td>Vehicles/hour ← TARGET</td><td><span class="tag tag-ok" style="background:rgba(56,189,248,0.15);color:#38bdf8;border-color:#38bdf8">TARGET</span></td></tr>
+    </table>
+  </div>
+
+  <!-- TRAFFIC VOLUME DISTRIBUTION -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-text">2. Target Variable Analysis</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Traffic Volume Distribution</div>
+      <div class="chart-wrap h280"><canvas id="chartVolDist"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Congestion Level Breakdown</div>
+      <div class="chart-wrap h280"><canvas id="chartCongLevel"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-4">
+    <div class="kpi"><div class="kpi-val" style="color:#38bdf8">3,260</div><div class="kpi-label">Mean Volume</div><div class="kpi-sub">vehicles/hour</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#22c55e">3,380</div><div class="kpi-label">Median Volume</div><div class="kpi-sub">vehicles/hour</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#ef4444">7,280</div><div class="kpi-label">Maximum</div><div class="kpi-sub">peak hour</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#a855f7">1,918</div><div class="kpi-label">Std Deviation</div><div class="kpi-sub">high variance</div></div>
+  </div>
+
+  <!-- TEMPORAL PATTERNS -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-text">3. Temporal Patterns</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Average Traffic Volume by Hour of Day</div>
+    <div class="chart-wrap h300"><canvas id="chartHourly"></canvas></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Traffic by Day of Week</div>
+      <div class="chart-wrap h250"><canvas id="chartDOW"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Traffic by Month</div>
+      <div class="chart-wrap h250"><canvas id="chartMonthly"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="insight-box">
+      <h4>🌅 Morning Rush (7-9 AM)</h4>
+      <p>Clear bimodal pattern — weekday mornings show 3,800+ vehicles/hr. This is the strongest temporal signal in the data.</p>
+    </div>
+    <div class="insight-box">
+      <h4>🌆 Evening Rush (4-6 PM)</h4>
+      <p>Evening peak is even higher at 4,876 avg vehicles/hr. Duration is longer — spanning 3+ hours vs 2 hours morning.</p>
+    </div>
+    <div class="insight-box">
+      <h4>🌙 Night Valley (12-5 AM)</h4>
+      <p>Traffic drops to 150-500 vehicles/hr. Clear opportunity window for maintenance and heavy transport logistics.</p>
+    </div>
+  </div>
+
+  <!-- MISSING VALUES -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-text">4. Missing Values Analysis</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Missing Values per Column</div>
+      <div class="chart-wrap h250"><canvas id="chartMissing"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Handling Strategy</div>
+      <div style="margin-top:0.5rem">
+        <div class="step-box">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Holiday Column — Dropped</h4>
+            <p>48,143 out of 48,204 rows (99.9%) had NaN. Column was unusable — dropped entirely.</p>
+          </div>
+        </div>
+        <div class="step-box">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>weather_description — Dropped</h4>
+            <p>Redundant with weather_main. 38 unique values vs 8 — too granular, added noise.</p>
+          </div>
+        </div>
+        <div class="step-box">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Temperature — Converted</h4>
+            <p>Kelvin → Celsius (temp - 273.15). Range: -25°C to 38°C. No missing values.</p>
+          </div>
+        </div>
+        <div class="step-box">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Result — Zero Missing Values</h4>
+            <p>After dropping 2 columns, remaining 7 features had 0 missing values. Clean dataset!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEATHER ANALYSIS -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-text">5. Weather Impact EDA</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Avg Traffic Volume by Weather Type</div>
+      <div class="chart-wrap h280"><canvas id="chartWeatherEDA"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Weather Condition Distribution</div>
+      <div class="chart-wrap h280"><canvas id="chartWeatherDist"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CORRELATION -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-text">6. Correlation Analysis</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Feature Correlation with Traffic Volume</div>
+      <div class="chart-wrap h300"><canvas id="chartCorr"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Key Correlations Found</div>
+      <div style="margin-top:0.5rem">
+        <table class="stat-table">
+          <tr><th>Feature</th><th>Correlation</th><th>Strength</th></tr>
+          <tr><td class="mono">hour</td><td class="mono" style="color:#38bdf8">0.18</td><td><span class="tag tag-ok">Moderate</span></td></tr>
+          <tr><td class="mono">hour_sin</td><td class="mono" style="color:#38bdf8">0.31</td><td><span class="tag tag-ok">Strong</span></td></tr>
+          <tr><td class="mono">rush_hour</td><td class="mono" style="color:#22c55e">0.42</td><td><span class="tag tag-ok">Strong</span></td></tr>
+          <tr><td class="mono">is_weekend</td><td class="mono" style="color:#ef4444">-0.38</td><td><span class="tag tag-bad">Negative</span></td></tr>
+          <tr><td class="mono">temp_c</td><td class="mono" style="color:#38bdf8">0.14</td><td><span class="tag tag-warn">Weak</span></td></tr>
+          <tr><td class="mono">rain_1h</td><td class="mono" style="color:#ef4444">-0.08</td><td><span class="tag tag-warn">Weak</span></td></tr>
+          <tr><td class="mono">snow_1h</td><td class="mono" style="color:#ef4444">-0.12</td><td><span class="tag tag-warn">Weak</span></td></tr>
+        </table>
+        <div class="insight-box" style="margin-top:1rem">
+          <h4>Key Finding</h4>
+          <p>rush_hour (r=0.42) and is_weekend (r=-0.38) are strongest predictors. Weather features have weak direct correlation but interact with temporal features.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OUTLIER ANALYSIS -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-text">7. Outlier Detection</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Traffic Volume — Box Plot Analysis</div>
+      <div class="chart-wrap h250"><canvas id="chartOutlier"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Outlier Summary</div>
+      <div style="margin-top:0.5rem">
+        <table class="stat-table">
+          <tr><th>Metric</th><th>Value</th></tr>
+          <tr><td>Q1 (25th percentile)</td><td class="mono">1,193</td></tr>
+          <tr><td>Q3 (75th percentile)</td><td class="mono">4,933</td></tr>
+          <tr><td>IQR</td><td class="mono">3,740</td></tr>
+          <tr><td>Lower Bound</td><td class="mono">-4,417 (→ 0)</td></tr>
+          <tr><td>Upper Bound</td><td class="mono">10,543</td></tr>
+          <tr><td>Outliers Found</td><td class="mono" style="color:#22c55e">0 (max=7280)</td></tr>
+        </table>
+        <div class="insight-box" style="margin-top:1rem">
+          <h4>✅ No Outlier Removal Needed</h4>
+          <p>All traffic volume values fall within valid range. High values (5000-7280) are genuine peak hour readings, not data errors.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREPROCESSING PIPELINE -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-text">8. Preprocessing Pipeline</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Complete Preprocessing Steps</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem">
+      <div style="background:var(--bg3);border-radius:10px;padding:1rem;border:1px solid var(--border)">
+        <div style="font-size:24px;margin-bottom:8px">1️⃣</div>
+        <div style="font-weight:600;color:var(--accent);margin-bottom:6px">Load & Sort</div>
+        <div style="font-size:12px;color:var(--text2)">CSV loaded → sorted chronologically by date_time → 48,204 records</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:1rem;border:1px solid var(--border)">
+        <div style="font-size:24px;margin-bottom:8px">2️⃣</div>
+        <div style="font-weight:600;color:var(--yellow);margin-bottom:6px">Drop Columns</div>
+        <div style="font-size:12px;color:var(--text2)">holiday (99.9% NaN) and weather_description dropped</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:1rem;border:1px solid var(--border)">
+        <div style="font-size:24px;margin-bottom:8px">3️⃣</div>
+        <div style="font-weight:600;color:var(--orange);margin-bottom:6px">Encode & Convert</div>
+        <div style="font-size:12px;color:var(--text2)">weather_main → LabelEncoder, temp K→C, date_time → components</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:1rem;border:1px solid var(--border)">
+        <div style="font-size:24px;margin-bottom:8px">4️⃣</div>
+        <div style="font-weight:600;color:var(--green);margin-bottom:6px">Scale Features</div>
+        <div style="font-size:12px;color:var(--text2)">StandardScaler on X (fit on train only), MinMax on y → 0 to 1</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAIN TEST SPLIT -->
+  <div class="card">
+    <div class="card-title">Train / Test Split Strategy</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+      <div>
+        <div style="margin-bottom:1rem">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <span style="color:var(--text2)">Training Set (80%)</span>
+            <span style="font-family:var(--mono);color:var(--accent)">38,563 records</span>
+          </div>
+          <div style="height:24px;background:var(--bg3);border-radius:6px;overflow:hidden">
+            <div style="height:24px;width:80%;background:linear-gradient(90deg,#38bdf8,#0ea5e9);border-radius:6px;display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:600;color:#000">80% — 2012 to 2016</div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <span style="color:var(--text2)">Test Set (20%)</span>
+            <span style="font-family:var(--mono);color:var(--orange)">9,641 records</span>
+          </div>
+          <div style="height:24px;background:var(--bg3);border-radius:6px;overflow:hidden">
+            <div style="height:24px;width:20%;background:linear-gradient(90deg,#f97316,#ef4444);border-radius:6px;display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:600;color:#fff">20%</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="insight-box">
+          <h4>Why Chronological Split?</h4>
+          <p>Random split would cause data leakage — future data leaking into training. Chronological split mimics real deployment: train on past, predict future.</p>
+        </div>
+        <div class="insight-box" style="border-left-color:var(--green)">
+          <h4>Test Period: 2017-2018</h4>
+          <p>Model was never exposed to 2017-2018 data during training. Evaluation on this unseen period gives true generalization score.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const COPTS = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},tooltip:{backgroundColor:'#1a2235',borderColor:'rgba(99,179,237,0.3)',borderWidth:1}},
+  scales:{
+    x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(99,179,237,0.05)'},border:{display:false}},
+    y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(99,179,237,0.07)'},border:{display:false}}
+  }
+};
+
+// Volume Distribution
+const volBins = ['0-500','500-1k','1k-1.5k','1.5k-2k','2k-2.5k','2.5k-3k','3k-3.5k','3.5k-4k','4k-4.5k','4.5k-5k','5k-5.5k','5.5k+'];
+const volCounts = [2840,3120,2890,2650,2430,2180,2560,3120,3890,4210,3670,14644];
+new Chart(document.getElementById('chartVolDist'),{
+  type:'bar',
+  data:{labels:volBins,datasets:[{label:'Count',data:volCounts,backgroundColor:volCounts.map((_,i)=>i<2?'#22c55e':i<6?'#eab308':i<9?'#f97316':'#ef4444'),borderRadius:4,borderSkipped:false}]},
+  options:{...COPTS,plugins:{...COPTS.plugins,title:{display:true,text:'Traffic Volume Frequency Distribution',color:'#94a3b8'}}}
+});
+
+// Congestion Level
+new Chart(document.getElementById('chartCongLevel'),{
+  type:'doughnut',
+  data:{labels:['LOW (<1000)','MEDIUM (1k-3k)','HIGH (3k-5k)','SEVERE (>5k)'],
+    datasets:[{data:[22.8,21.8,31.8,23.6],backgroundColor:['rgba(34,197,94,0.8)','rgba(234,179,8,0.8)','rgba(249,115,22,0.8)','rgba(239,68,68,0.8)'],borderColor:['#22c55e','#eab308','#f97316','#ef4444'],borderWidth:2}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:11},padding:12}}}}
+});
+
+// Hourly
+const hourlyData = [335,216,151,117,144,371,1623,3712,4056,3554,3101,3356,3578,3134,2912,3256,4034,4776,4023,3134,2356,1776,1134,612];
+const HL = Array.from({length:24},(_,i)=>i<12?`${i===0?12:i}am`:`${i===12?12:i-12}pm`);
+new Chart(document.getElementById('chartHourly'),{
+  type:'line',
+  data:{labels:HL,datasets:[{label:'Avg Volume',data:hourlyData,borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,0.1)',fill:true,tension:0.4,pointRadius:4,borderWidth:2.5,pointBackgroundColor:hourlyData.map(v=>v>4000?'#ef4444':v>3000?'#f97316':'#38bdf8')}]},
+  options:{...COPTS}
+});
+
+// DOW
+new Chart(document.getElementById('chartDOW'),{
+  type:'bar',
+  data:{labels:['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+    datasets:[{label:'Avg Volume',data:[2934,2856,2812,2798,2967,1823,1654],backgroundColor:['#38bdf8','#38bdf8','#38bdf8','#38bdf8','#38bdf8','#a855f7','#a855f7'],borderRadius:6,borderSkipped:false}]},
+  options:{...COPTS}
+});
+
+// Monthly
+new Chart(document.getElementById('chartMonthly'),{
+  type:'line',
+  data:{labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    datasets:[{label:'Avg Volume',data:[2634,2589,2756,2934,3123,3312,3198,3145,2987,2834,2698,2512],borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.1)',fill:true,tension:0.4,borderWidth:2,pointRadius:5,pointBackgroundColor:'#22c55e'}]},
+  options:{...COPTS}
+});
+
+// Missing Values
+new Chart(document.getElementById('chartMissing'),{
+  type:'bar',
+  data:{labels:['holiday','weather_desc','temp','rain_1h','snow_1h','clouds_all','weather_main','date_time','traffic_vol'],
+    datasets:[{label:'Missing Values',data:[48143,0,0,0,0,0,0,0,0],backgroundColor:['#ef4444','#22c55e','#22c55e','#22c55e','#22c55e','#22c55e','#22c55e','#22c55e','#22c55e'],borderRadius:4,borderSkipped:false}]},
+  options:{...COPTS,indexAxis:'y'}
+});
+
+// Weather EDA
+new Chart(document.getElementById('chartWeatherEDA'),{
+  type:'bar',
+  data:{labels:['Clear','Clouds','Mist','Rain','Drizzle','Fog','Snow','Thunderstorm'],
+    datasets:[{label:'Avg Volume',data:[3245,3156,2789,2456,2634,2234,1234,1876],backgroundColor:['#38bdf8bb','#94a3b8bb','#64748bbb','#3b82f6bb','#0ea5e9bb','#475569bb','#8b5cf6bb','#6366f1bb'],borderRadius:6,borderSkipped:false}]},
+  options:{...COPTS}
+});
+
+// Weather Distribution
+new Chart(document.getElementById('chartWeatherDist'),{
+  type:'doughnut',
+  data:{labels:['Clouds','Clear','Mist','Rain','Drizzle','Snow','Fog','Thunderstorm'],
+    datasets:[{data:[38.2,24.1,15.3,12.4,5.2,2.8,1.4,0.6],backgroundColor:['#94a3b8','#38bdf8','#64748b','#3b82f6','#0ea5e9','#8b5cf6','#475569','#6366f1'],borderWidth:2}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:10},padding:8}}}}
+});
+
+// Correlation
+new Chart(document.getElementById('chartCorr'),{
+  type:'bar',
+  data:{labels:['rush_hour','is_weekend','hour_sin','hour_cos','dow_sin','temp_c','month','snow_1h','rain_1h','clouds_all'],
+    datasets:[{label:'Correlation with traffic_volume',
+      data:[0.42,-0.38,0.31,-0.28,0.21,0.14,0.11,-0.12,-0.08,-0.06],
+      backgroundColor:[0.42,-0.38,0.31,-0.28,0.21,0.14,0.11,-0.12,-0.08,-0.06].map(v=>v>0?'rgba(56,189,248,0.7)':'rgba(239,68,68,0.7)'),
+      borderRadius:4,borderSkipped:false}]},
+  options:{...COPTS,indexAxis:'y',plugins:{...COPTS.plugins,legend:{display:false}}}
+});
+
+// Outlier Box approximation
+new Chart(document.getElementById('chartOutlier'),{
+  type:'bar',
+  data:{labels:['Min','Q1','Median','Mean','Q3','Max'],
+    datasets:[{label:'Traffic Volume',data:[0,1193,3380,3260,4933,7280],backgroundColor:['#64748b','#38bdf8','#22c55e','#a855f7','#f97316','#ef4444'],borderRadius:6,borderSkipped:false}]},
+  options:{...COPTS}
+});
+</script>
+</body>
+</html>

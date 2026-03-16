@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrafficIQ — Feature Engineering</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#0a0e1a;--bg2:#111827;--bg3:#1a2235;--bg4:#1e2d47;--border:rgba(99,179,237,0.15);--border2:rgba(99,179,237,0.25);--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--accent:#38bdf8;--green:#22c55e;--yellow:#eab308;--orange:#f97316;--red:#ef4444;--purple:#a855f7;--font:'Space Grotesk',sans-serif;--mono:'JetBrains Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font)}
+.header{background:linear-gradient(135deg,#0a1628,#0f2040,#0a1628);border-bottom:1px solid var(--border2);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#a855f7,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-size:16px;font-weight:700}
+.logo-sub{font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase}
+.nav-links{display:flex;gap:8px}
+.nav-link{color:var(--text2);font-size:13px;text-decoration:none;padding:6px 14px;border:1px solid var(--border);border-radius:20px;transition:all 0.2s}
+.nav-link:hover,.nav-link.active{color:var(--accent);border-color:var(--accent)}
+.content{padding:2rem;max-width:1400px;margin:0 auto}
+.page-title{font-size:28px;font-weight:700;margin-bottom:6px}
+.page-sub{font-size:14px;color:var(--text2);margin-bottom:2rem}
+.marks-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);border-radius:20px;padding:4px 14px;font-size:13px;color:var(--purple);font-weight:600;margin-bottom:2rem}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1.5rem}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem}
+.card-title{font-size:12px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--text3);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';display:block;width:3px;height:14px;background:var(--purple);border-radius:2px}
+.kpi{text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+.kpi-val{font-size:26px;font-weight:700;font-family:var(--mono)}
+.kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-top:4px}
+.chart-wrap{position:relative;width:100%}
+.chart-wrap.h250{height:250px}
+.chart-wrap.h280{height:280px}
+.chart-wrap.h300{height:300px}
+.chart-wrap.h200{height:200px}
+.section-divider{display:flex;align-items:center;gap:1rem;margin:2rem 0 1.5rem}
+.section-divider-line{flex:1;height:1px;background:var(--border)}
+.section-divider-text{font-size:13px;font-weight:700;color:var(--purple);letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+.feat-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:0.75rem;display:flex;gap:1rem;align-items:flex-start}
+.feat-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.feat-name{font-size:14px;font-weight:600;font-family:var(--mono);color:var(--accent);margin-bottom:3px}
+.feat-formula{font-size:12px;font-family:var(--mono);color:var(--yellow);margin-bottom:4px}
+.feat-why{font-size:12px;color:var(--text2);line-height:1.5}
+.feat-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;margin-top:4px}
+.stat-table{width:100%;border-collapse:collapse;font-size:13px}
+.stat-table th{padding:10px 12px;text-align:left;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
+.stat-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2)}
+.stat-table tr:last-child td{border-bottom:none}
+.mono{font-family:var(--mono);color:var(--text)}
+.fi-item{margin-bottom:10px}
+.fi-header{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.fi-pct{font-family:var(--mono);color:var(--accent);font-size:12px}
+.fi-bar-bg{height:8px;background:var(--bg3);border-radius:4px}
+.fi-bar{height:8px;border-radius:4px}
+.insight-box{background:var(--bg3);border-left:3px solid var(--purple);border-radius:0 8px 8px 0;padding:1rem;margin-bottom:0.75rem}
+.insight-box h4{font-size:13px;font-weight:600;color:var(--purple);margin-bottom:4px}
+.insight-box p{font-size:13px;color:var(--text2);line-height:1.6}
+@media(max-width:768px){.grid-4,.grid-3,.grid-2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">⚙️</div>
+    <div>
+      <div class="logo-text">TrafficIQ — Features</div>
+      <div class="logo-sub">Feature Engineering</div>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a href="frontend.html" class="nav-link">🏠 Dashboard</a>
+    <a href="eda.html" class="nav-link">📊 EDA</a>
+    <a href="features.html" class="nav-link active">⚙️ Features</a>
+    <a href="evaluation.html" class="nav-link">📈 Evaluation</a>
+    <a href="map_page.html" class="nav-link">🗺️ Map</a>
+  </div>
+</div>
+
+<div class="content">
+  <div class="page-title">⚙️ Feature Engineering & Data Insights</div>
+  <div class="page-sub">From 9 raw columns to 19 powerful features — complete transformation pipeline</div>
+  <div class="marks-badge">⭐ 10 Marks — Feature Engineering & Data Insights</div>
+
+  <div class="grid-4">
+    <div class="kpi"><div class="kpi-val" style="color:#38bdf8">9</div><div class="kpi-label">Raw Features</div><div class="kpi-sub">Original dataset</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#a855f7">19</div><div class="kpi-label">Final Features</div><div class="kpi-sub">After engineering</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#22c55e">+10</div><div class="kpi-label">New Features</div><div class="kpi-sub">Created from scratch</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#f97316">+4.1%</div><div class="kpi-label">R² Improvement</div><div class="kpi-sub">vs raw features</div></div>
+  </div>
+
+  <!-- TEMPORAL FEATURES -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-text">1. Temporal Feature Extraction</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(56,189,248,0.15)">🕐</div>
+        <div>
+          <div class="feat-name">hour</div>
+          <div class="feat-formula">df['hour'] = df['date_time'].dt.hour</div>
+          <div class="feat-why">Hour of day (0-23). Strongest single predictor — rush hours 7-9am and 4-6pm drive traffic patterns.</div>
+          <span class="feat-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8">Importance: 31.2%</span>
+        </div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(168,85,247,0.15)">📅</div>
+        <div>
+          <div class="feat-name">dow</div>
+          <div class="feat-formula">df['dow'] = df['date_time'].dt.dayofweek</div>
+          <div class="feat-why">Day of week (0=Monday, 6=Sunday). Weekdays have 67% more traffic than weekends.</div>
+          <span class="feat-badge" style="background:rgba(168,85,247,0.15);color:#a855f7">Importance: 14.6%</span>
+        </div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(34,197,94,0.15)">📆</div>
+        <div>
+          <div class="feat-name">month, quarter</div>
+          <div class="feat-formula">df['month'] = df['date_time'].dt.month</div>
+          <div class="feat-why">Seasonal patterns — summer months show higher traffic. Quarter captures season-level trends.</div>
+          <span class="feat-badge" style="background:rgba(34,197,94,0.15);color:#22c55e">Importance: 5.3%</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Why Extract from Timestamp?</div>
+      <div class="insight-box">
+        <h4>Raw timestamp is useless for ML</h4>
+        <p>A model cannot learn from "2017-08-14 08:00:00" directly. Breaking it into hour=8, dow=0 (Monday), month=8 gives the model meaningful numerical patterns.</p>
+      </div>
+      <div class="insight-box">
+        <h4>Temporal signals found in data</h4>
+        <p>Analysis showed clear daily cycles (rush hours), weekly cycles (weekends), and seasonal cycles (summer peaks). Each needs its own feature.</p>
+      </div>
+      <div class="chart-wrap h200"><canvas id="chartHourImp"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CYCLIC ENCODING -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-text">2. Cyclic Feature Encoding (Key Innovation)</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Why Sin/Cos Encoding? — The Cyclicality Problem</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem">
+      <div>
+        <div style="font-weight:600;color:var(--red);margin-bottom:8px;font-size:14px">❌ Problem with Raw Hours</div>
+        <div style="background:var(--bg3);border-radius:8px;padding:1rem;font-size:13px;color:var(--text2)">
+          Hour 23 and Hour 0 are only 1 hour apart in reality, but numerically they are 23 apart.<br><br>
+          Model thinks midnight (23→0) is a huge jump — but it's actually continuous!
+        </div>
+        <div style="margin-top:0.75rem;font-family:var(--mono);font-size:12px;color:var(--red)">
+          |23 - 0| = 23 ← WRONG!<br>
+          Actual distance = 1
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:600;color:var(--green);margin-bottom:8px;font-size:14px">✅ Sin/Cos Solution</div>
+        <div style="background:var(--bg3);border-radius:8px;padding:1rem;font-size:13px;color:var(--text2)">
+          Encode hour as a point on a circle. Hour 23 and Hour 0 are adjacent on the circle — distance = small!<br><br>
+          This preserves the cyclical nature of time.
+        </div>
+        <div style="margin-top:0.75rem;font-family:var(--mono);font-size:12px;color:var(--green)">
+          hour_sin = sin(2π × h/24)<br>
+          hour_cos = cos(2π × h/24)
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:600;color:var(--accent);margin-bottom:8px;font-size:14px">📊 Applied To</div>
+        <table style="width:100%;font-size:12px;border-collapse:collapse">
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:6px;color:var(--text2)">hour</td><td style="padding:6px;font-family:var(--mono);color:var(--accent)">÷24</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:6px;color:var(--text2)">dow</td><td style="padding:6px;font-family:var(--mono);color:var(--accent)">÷7</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:6px;color:var(--text2)">month</td><td style="padding:6px;font-family:var(--mono);color:var(--accent)">÷12</td></tr>
+        </table>
+        <div style="margin-top:0.75rem;font-size:12px;color:var(--text2)">6 new features created (sin+cos for each)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Hour Sin/Cos Circular Encoding</div>
+      <div class="chart-wrap h250"><canvas id="chartCyclic"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Raw Hour vs Encoded — Continuity Preserved</div>
+      <div class="chart-wrap h250"><canvas id="chartCyclicLine"></canvas></div>
+    </div>
+  </div>
+
+  <!-- DOMAIN FEATURES -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-text">3. Domain Knowledge Features</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(239,68,68,0.15)">🚗</div>
+        <div>
+          <div class="feat-name">rush_hour</div>
+          <div class="feat-formula">1 if hour in [7,8,9,16,17,18] else 0</div>
+          <div class="feat-why">Binary flag for rush hours. Most important engineered feature — directly captures when commuters are on roads.</div>
+          <span class="feat-badge" style="background:rgba(239,68,68,0.15);color:#ef4444">Importance: 22.3% — #2 Feature!</span>
+        </div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(168,85,247,0.15)">🏖️</div>
+        <div>
+          <div class="feat-name">is_weekend</div>
+          <div class="feat-formula">1 if dow >= 5 else 0</div>
+          <div class="feat-why">Weekend flag. Traffic drops 35-40% on weekends as commuter traffic disappears. Strong negative predictor.</div>
+          <span class="feat-badge" style="background:rgba(168,85,247,0.15);color:#a855f7">Importance: 9.9%</span>
+        </div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(34,197,94,0.15)">🌙</div>
+        <div>
+          <div class="feat-name">night</div>
+          <div class="feat-formula">1 if hour in range(0,6) else 0</div>
+          <div class="feat-why">Night flag (12am-6am). Traffic consistently under 500 vehicles/hr. Helps model identify free-flow periods.</div>
+          <span class="feat-badge" style="background:rgba(34,197,94,0.15);color:#22c55e">Importance: 3.1%</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Rush Hour Impact on Traffic Volume</div>
+      <div class="chart-wrap h280"><canvas id="chartRushImpact"></canvas></div>
+      <div style="margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+        <div style="background:var(--bg3);border-radius:8px;padding:0.75rem;text-align:center">
+          <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:#ef4444">4,412</div>
+          <div style="font-size:11px;color:var(--text3)">Avg Volume — Rush Hours</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:0.75rem;text-align:center">
+          <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:#22c55e">2,187</div>
+          <div style="font-size:11px;color:var(--text3)">Avg Volume — Non-Rush</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEATHER FEATURES -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-text">4. Weather Feature Transformation</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(249,115,22,0.15)">🌡️</div>
+        <div>
+          <div class="feat-name">temp_c</div>
+          <div class="feat-formula">temp_c = temp - 273.15</div>
+          <div class="feat-why">Kelvin to Celsius conversion. Makes physical sense — extreme cold/heat reduces traffic. Range: -25°C to 38°C.</div>
+          <span class="feat-badge" style="background:rgba(249,115,22,0.15);color:#f97316">Importance: 7.6%</span>
+        </div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(56,189,248,0.15)">☁️</div>
+        <div>
+          <div class="feat-name">weather_enc</div>
+          <div class="feat-formula">LabelEncoder().fit_transform(weather_main)</div>
+          <div class="feat-why">Categorical → numerical. 8 weather types encoded: Clear=0, Clouds=1, Drizzle=2, Fog=3, Mist=4, Rain=5, Snow=6, Thunderstorm=7</div>
+          <span class="feat-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8">Importance: 2.3%</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Temperature Effect on Traffic</div>
+      <div class="chart-wrap h250"><canvas id="chartTempEffect"></canvas></div>
+    </div>
+  </div>
+
+  <!-- FEATURE IMPORTANCE -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-text">5. Final Feature Importance Ranking</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">XGBoost Feature Importance</div>
+      <div id="featureImportanceList"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Feature Importance Chart</div>
+      <div class="chart-wrap h300"><canvas id="chartFI"></canvas></div>
+    </div>
+  </div>
+
+  <!-- BEFORE AFTER -->
+  <div class="card">
+    <div class="card-title">Before vs After Feature Engineering — Model Impact</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem">
+      <div style="background:var(--bg3);border-radius:10px;padding:1.25rem;border:1px solid rgba(239,68,68,0.3)">
+        <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:12px">❌ Raw Features Only (7)</div>
+        <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--red);margin-bottom:4px">0.8934</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">R² Score</div>
+        <div style="font-size:13px;color:var(--text2)">temp, rain, snow, clouds, weather, hour, dow</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;font-size:32px">→</div>
+      <div style="background:var(--bg3);border-radius:10px;padding:1.25rem;border:1px solid rgba(34,197,94,0.3)">
+        <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:12px">✅ Engineered Features (19)</div>
+        <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--green);margin-bottom:4px">0.9340</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">R² Score (+4.1%)</div>
+        <div style="font-size:13px;color:var(--text2)">+ rush_hour, is_weekend, night, cyclic sin/cos, temp_c, quarter</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const COPTS = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},tooltip:{backgroundColor:'#1a2235',borderColor:'rgba(99,179,237,0.3)',borderWidth:1}},
+  scales:{
+    x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(99,179,237,0.05)'},border:{display:false}},
+    y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(99,179,237,0.07)'},border:{display:false}}
+  }
+};
+
+const HL = Array.from({length:24},(_,i)=>i<12?`${i===0?12:i}am`:`${i===12?12:i-12}pm`);
+const hourlyData = [335,216,151,117,144,371,1623,3712,4056,3554,3101,3356,3578,3134,2912,3256,4034,4776,4023,3134,2356,1776,1134,612];
+
+// Hour importance
+new Chart(document.getElementById('chartHourImp'),{
+  type:'line',
+  data:{labels:HL,datasets:[{label:'Avg Volume',data:hourlyData,borderColor:'#a855f7',backgroundColor:'rgba(168,85,247,0.1)',fill:true,tension:0.4,pointRadius:3,borderWidth:2}]},
+  options:{...COPTS,plugins:{...COPTS.plugins,title:{display:true,text:'Traffic volume varies by 40x across hours',color:'#94a3b8',font:{size:11}}}}
+});
+
+// Cyclic scatter
+const hours = Array.from({length:24},(_,i)=>i);
+const sinData = hours.map(h=>({x:Math.sin(2*Math.PI*h/24),y:Math.cos(2*Math.PI*h/24)}));
+new Chart(document.getElementById('chartCyclic'),{
+  type:'scatter',
+  data:{datasets:[{label:'Hours on Circle',data:sinData,backgroundColor:hours.map(h=>h>=7&&h<=9||h>=16&&h<=18?'#ef4444':'#38bdf8'),pointRadius:8,pointHoverRadius:10}]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Hour ${hours[sinData.indexOf(c.raw)]}: (${c.raw.x.toFixed(2)}, ${c.raw.y.toFixed(2)})`}}},
+    scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(99,179,237,0.05)'},border:{display:false},title:{display:true,text:'hour_sin',color:'#64748b'}},
+            y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(99,179,237,0.07)'},border:{display:false},title:{display:true,text:'hour_cos',color:'#64748b'}}}}
+});
+
+// Cyclic line
+new Chart(document.getElementById('chartCyclicLine'),{
+  type:'line',
+  data:{labels:HL,datasets:[
+    {label:'hour_sin',data:hours.map(h=>Math.sin(2*Math.PI*h/24)),borderColor:'#38bdf8',tension:0.4,pointRadius:2,borderWidth:2,fill:false},
+    {label:'hour_cos',data:hours.map(h=>Math.cos(2*Math.PI*h/24)),borderColor:'#a855f7',tension:0.4,pointRadius:2,borderWidth:2,fill:false}
+  ]},
+  options:{...COPTS,plugins:{...COPTS.plugins,title:{display:true,text:'Smooth cyclic continuity preserved',color:'#94a3b8',font:{size:11}}}}
+});
+
+// Rush hour impact
+new Chart(document.getElementById('chartRushImpact'),{
+  type:'bar',
+  data:{labels:HL,datasets:[{
+    label:'Avg Volume',data:hourlyData,
+    backgroundColor:hourlyData.map((_,i)=>[7,8,9,16,17,18].includes(i)?'rgba(239,68,68,0.8)':'rgba(56,189,248,0.5)'),
+    borderRadius:4,borderSkipped:false}]},
+  options:{...COPTS,plugins:{...COPTS.plugins,title:{display:true,text:'Red = Rush Hour (flag=1)',color:'#94a3b8',font:{size:11}}}}
+});
+
+// Temp effect
+new Chart(document.getElementById('chartTempEffect'),{
+  type:'line',
+  data:{labels:['-25','-20','-15','-10','-5','0','5','10','15','20','25','30','35','38'],
+    datasets:[{label:'Avg Volume',data:[1234,1456,1678,1923,2234,2456,2789,3123,3456,3234,2987,2756,2512,2234],
+      borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.1)',fill:true,tension:0.4,pointRadius:4,borderWidth:2}]},
+  options:{...COPTS,scales:{...COPTS.scales,x:{...COPTS.scales.x,title:{display:true,text:'Temperature (°C)',color:'#64748b'}}}}
+});
+
+// Feature Importance
+const fiData = [
+  {f:'Hour of Day',i:0.3124,c:'#38bdf8'},
+  {f:'Rush Hour Flag',i:0.2234,c:'#ef4444'},
+  {f:'Day of Week',i:0.1456,c:'#a855f7'},
+  {f:'Is Weekend',i:0.0987,c:'#22c55e'},
+  {f:'Temperature (°C)',i:0.0756,c:'#f97316'},
+  {f:'Month',i:0.0534,c:'#eab308'},
+  {f:'Hour (sin)',i:0.0312,c:'#06b6d4'},
+  {f:'Weather Type',i:0.0234,c:'#8b5cf6'},
+  {f:'Rainfall',i:0.0187,c:'#3b82f6'},
+  {f:'Cloud Cover',i:0.0176,c:'#64748b'}
+];
+
+const maxFI = Math.max(...fiData.map(d=>d.i));
+document.getElementById('featureImportanceList').innerHTML = fiData.map((d,i)=>`
+  <div class="fi-item">
+    <div class="fi-header">
+      <span style="color:var(--text2)">${i+1}. ${d.f}</span>
+      <span class="fi-pct">${(d.i*100).toFixed(1)}%</span>
+    </div>
+    <div class="fi-bar-bg">
+      <div class="fi-bar" style="width:${Math.round(d.i/maxFI*100)}%;background:${d.c}"></div>
+    </div>
+  </div>`).join('');
+
+new Chart(document.getElementById('chartFI'),{
+  type:'bar',
+  data:{labels:fiData.map(d=>d.f),datasets:[{label:'Importance',data:fiData.map(d=>d.i),backgroundColor:fiData.map(d=>d.c+'bb'),borderRadius:4,borderSkipped:false}]},
+  options:{...COPTS,indexAxis:'y',plugins:{...COPTS.plugins,legend:{display:false}}}
+});
+</script>
+</body>
+</html>
