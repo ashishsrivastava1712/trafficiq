@@ -4,551 +4,798 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TrafficIQ — Urban Congestion Intelligence</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-:root{--bg:#0a0e1a;--bg2:#111827;--bg3:#1a2235;--bg4:#1e2d47;--border:rgba(99,179,237,0.15);--border2:rgba(99,179,237,0.25);--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--accent:#38bdf8;--accent2:#0ea5e9;--green:#22c55e;--yellow:#eab308;--orange:#f97316;--red:#ef4444;--purple:#a855f7;--pink:#ec4899;--font:'Space Grotesk',sans-serif;--mono:'JetBrains Mono',monospace}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
-::-webkit-scrollbar{width:6px;height:6px}
+:root{
+  --bg:#0a0a0f;
+  --bg2:#111118;
+  --bg3:#1a1a24;
+  --bg4:#22222f;
+  --border:rgba(255,255,255,0.06);
+  --border2:rgba(255,255,255,0.12);
+  --text:#f0f0f5;
+  --text2:#9090a8;
+  --text3:#5a5a70;
+  --accent:#6c63ff;
+  --accent2:#8b83ff;
+  --green:#22c55e;
+  --yellow:#f59e0b;
+  --orange:#f97316;
+  --red:#ef4444;
+  --purple:#a855f7;
+  --font:'Inter',sans-serif;
+  --mono:'JetBrains Mono',monospace
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
-::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:3px}
-.header{background:linear-gradient(135deg,#0a1628,#0f2040,#0a1628);border-bottom:1px solid var(--border2);padding:0 2rem;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;height:64px}
-.logo{display:flex;align-items:center;gap:12px}
-.logo-icon{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#38bdf8,#0ea5e9);display:flex;align-items:center;justify-content:center;font-size:18px}
-.logo-text{font-size:16px;font-weight:700}
-.logo-sub{font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase}
-.header-right{display:flex;align-items:center;gap:10px}
-.live-badge{display:flex;align-items:center;gap:6px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--green)}
-.live-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-.model-badge{background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.25);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--purple)}
-.map-badge{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--green);text-decoration:none;cursor:pointer}
-.api-badge{font-size:11px;padding:4px 10px;border-radius:20px}
-.api-ok{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
-.api-err{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
-.nav{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;padding:0 2rem;overflow-x:auto}
-.nav-btn{padding:14px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text3);border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;font-family:var(--font);text-decoration:none;display:inline-flex;align-items:center}
-.nav-btn:hover{color:var(--text)}
-.nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
-.nav-link{padding:14px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--green);border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;font-family:var(--font);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
-.nav-link:hover{color:var(--text);border-bottom-color:var(--green)}
-.content{padding:1.5rem 2rem;max-width:1600px;margin:0 auto}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px}
+
+/* ── NAVBAR ── */
+.nav-container{
+  position:fixed;top:1.5rem;left:50%;transform:translateX(-50%);
+  width:92%;max-width:1200px;z-index:1000
+}
+.nav{
+  background:rgba(17,17,24,0.85);
+  backdrop-filter:blur(20px);
+  border:1px solid var(--border2);
+  border-radius:16px;
+  height:60px;
+  overflow:hidden;
+  will-change:height;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4)
+}
+.nav-top{
+  height:60px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 0.5rem 0 1.25rem;
+  position:relative;z-index:2
+}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-logo-icon{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,#6c63ff,#a855f7);
+  display:flex;align-items:center;justify-content:center;font-size:16px
+}
+.nav-logo-text{font-size:15px;font-weight:700;letter-spacing:-0.3px}
+.nav-logo-sub{font-size:10px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase}
+.hamburger{
+  display:flex;flex-direction:column;gap:6px;cursor:pointer;
+  padding:8px;border-radius:8px;transition:background 0.2s;
+  position:absolute;left:1.25rem
+}
+.hamburger:hover{background:rgba(255,255,255,0.05)}
+.hamburger-line{
+  width:22px;height:2px;background:var(--text);border-radius:2px;
+  transition:transform 0.25s ease,opacity 0.2s ease
+}
+.hamburger.open .hamburger-line:first-child{transform:translateY(4px) rotate(45deg)}
+.hamburger.open .hamburger-line:last-child{transform:translateY(-4px) rotate(-45deg)}
+.nav-center{
+  position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  display:flex;align-items:center;gap:8px
+}
+.nav-pill{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(108,99,255,0.15);
+  border:1px solid rgba(108,99,255,0.3);
+  border-radius:20px;padding:4px 12px;
+  font-size:12px;color:var(--accent2)
+}
+.nav-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.nav-cta{
+  background:linear-gradient(135deg,#6c63ff,#a855f7);
+  color:#fff;border:none;border-radius:10px;
+  padding:0 1.25rem;height:38px;font-weight:600;
+  font-size:13px;cursor:pointer;font-family:var(--font);
+  transition:opacity 0.2s;letter-spacing:-0.2px
+}
+.nav-cta:hover{opacity:0.85}
+.nav-cards{
+  display:flex;gap:8px;padding:0 8px 8px;
+  height:200px;align-items:stretch
+}
+.nav-card{
+  flex:1;border-radius:12px;padding:16px;
+  display:flex;flex-direction:column;
+  cursor:pointer;transition:opacity 0.2s;
+  opacity:0;transform:translateY(20px)
+}
+.nav-card:hover{opacity:0.85!important}
+.nav-card-label{font-size:20px;font-weight:600;letter-spacing:-0.5px;margin-bottom:auto}
+.nav-card-links{display:flex;flex-direction:column;gap:4px;margin-top:12px}
+.nav-card-link{
+  font-size:13px;color:rgba(255,255,255,0.6);
+  text-decoration:none;display:flex;align-items:center;gap:6px;
+  transition:color 0.2s;padding:2px 0
+}
+.nav-card-link:hover{color:#fff}
+.nav-card-link::before{content:'↗';font-size:11px}
+
+/* ── HERO ── */
+.hero{
+  min-height:100vh;display:flex;align-items:center;
+  justify-content:center;padding:120px 2rem 4rem;
+  position:relative;overflow:hidden
+}
+.hero-bg{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(108,99,255,0.15) 0%,transparent 70%),
+    radial-gradient(ellipse 40% 40% at 80% 50%,rgba(168,85,247,0.08) 0%,transparent 60%);
+  pointer-events:none
+}
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);
+  background-size:60px 60px;pointer-events:none;
+  mask-image:radial-gradient(ellipse at center,black 0%,transparent 70%)
+}
+.hero-content{text-align:center;max-width:800px;position:relative}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.25);
+  border-radius:20px;padding:6px 16px;font-size:12px;
+  color:var(--accent2);margin-bottom:2rem;letter-spacing:0.3px
+}
+.hero-title{
+  font-size:clamp(3rem,8vw,6rem);font-weight:800;
+  letter-spacing:-2px;line-height:1.05;margin-bottom:1.5rem
+}
+.hero-title-accent{
+  background:linear-gradient(135deg,#6c63ff,#a855f7,#ec4899);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text
+}
+.hero-sub{
+  font-size:1.1rem;color:var(--text2);line-height:1.7;
+  margin-bottom:2.5rem;max-width:560px;margin-left:auto;margin-right:auto
+}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{
+  background:linear-gradient(135deg,#6c63ff,#a855f7);
+  color:#fff;border:none;border-radius:12px;padding:14px 28px;
+  font-weight:600;font-size:15px;cursor:pointer;font-family:var(--font);
+  transition:transform 0.2s,box-shadow 0.2s;
+  box-shadow:0 4px 20px rgba(108,99,255,0.3)
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(108,99,255,0.4)}
+.btn-secondary{
+  background:rgba(255,255,255,0.06);color:var(--text);
+  border:1px solid var(--border2);border-radius:12px;padding:14px 28px;
+  font-weight:600;font-size:15px;cursor:pointer;font-family:var(--font);
+  transition:background 0.2s,border-color 0.2s
+}
+.btn-secondary:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2)}
+.hero-stats{
+  display:flex;gap:2rem;justify-content:center;
+  margin-top:4rem;flex-wrap:wrap
+}
+.hero-stat{text-align:center}
+.hero-stat-val{font-size:2rem;font-weight:800;font-family:var(--mono);letter-spacing:-1px}
+.hero-stat-label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-top:4px}
+
+/* ── MAIN CONTENT ── */
+.main{padding:0 2rem 4rem;max-width:1400px;margin:0 auto}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+.section-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';display:block;width:20px;height:2px;background:var(--accent);border-radius:1px}
+
+/* ── TABS ── */
+.tabs{
+  display:flex;gap:4px;background:var(--bg2);
+  border:1px solid var(--border);border-radius:14px;
+  padding:4px;margin-bottom:2rem;overflow-x:auto
+}
+.tab{
+  padding:10px 18px;border-radius:10px;font-size:13px;
+  font-weight:500;cursor:pointer;border:none;background:transparent;
+  color:var(--text3);transition:all 0.2s;font-family:var(--font);
+  white-space:nowrap
+}
+.tab:hover{color:var(--text);background:rgba(255,255,255,0.04)}
+.tab.active{color:#fff;background:var(--bg3);box-shadow:0 2px 8px rgba(0,0,0,0.3)}
 .page{display:none}
 .page.active{display:block}
+
+/* ── CARDS ── */
 .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
 .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1.5rem}
 .grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1.5rem}
 .grid-1-2{display:grid;grid-template-columns:1fr 2fr;gap:1rem;margin-bottom:1.5rem}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;transition:border-color 0.2s}
+
+.card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:16px;padding:1.25rem;
+  transition:border-color 0.2s,transform 0.2s
+}
 .card:hover{border-color:var(--border2)}
-.card-title{font-size:12px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--text3);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
-.kpi{text-align:center}
-.kpi-val{font-size:28px;font-weight:700;font-family:var(--mono);letter-spacing:-1px}
-.kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-top:4px}
-.kpi-delta{font-size:12px;margin-top:6px}
+.card-title{
+  font-size:11px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;color:var(--text3);
+  margin-bottom:1rem;display:flex;align-items:center;gap:8px
+}
+.card-title::before{content:'';display:block;width:3px;height:12px;background:var(--accent);border-radius:2px}
+
+/* ── KPI CARDS ── */
+.kpi{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:16px;padding:1.5rem;text-align:center;
+  transition:border-color 0.2s,transform 0.2s;position:relative;overflow:hidden
+}
+.kpi::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at top,var(--kpi-color,rgba(108,99,255,0.08)) 0%,transparent 60%);
+  pointer-events:none
+}
+.kpi:hover{transform:translateY(-2px);border-color:var(--border2)}
+.kpi-val{font-size:2.2rem;font-weight:800;font-family:var(--mono);letter-spacing:-1px;position:relative}
+.kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-top:6px;position:relative}
+.kpi-sub{font-size:12px;color:var(--text2);margin-top:4px;position:relative}
+.kpi-delta{font-size:12px;margin-top:8px;position:relative}
 .kpi-delta.up{color:var(--red)}
 .kpi-delta.down{color:var(--green)}
+
+/* ── CHART ── */
 .chart-wrap{position:relative;width:100%}
 .chart-wrap.h200{height:200px}
 .chart-wrap.h250{height:250px}
 .chart-wrap.h280{height:280px}
-.chart-wrap.h300{height:300px}
 .chart-wrap.h320{height:320px}
-.chart-wrap.h380{height:380px}
-.hm-cell{height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--mono);color:rgba(255,255,255,0.8);cursor:pointer;transition:transform 0.1s}
-.hm-cell:hover{transform:scale(1.15);z-index:5;position:relative}
-.peak-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
-.peak-item:last-child{border-bottom:none}
-.peak-time{font-family:var(--mono);font-size:14px;font-weight:500;min-width:80px}
-.peak-bar-wrap{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
-.peak-bar{height:100%;border-radius:4px;transition:width 0.6s}
-.peak-vol{font-family:var(--mono);font-size:12px;color:var(--text3);min-width:60px;text-align:right}
-.form-group{margin-bottom:0}
-.form-group label{font-size:12px;color:var(--text2);display:block;margin-bottom:6px}
-.form-group select,.form-group input{width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color 0.2s}
+
+/* ── FORM ── */
+.form-group{margin-bottom:0.75rem}
+.form-group label{font-size:11px;color:var(--text2);display:block;margin-bottom:6px;font-weight:500;letter-spacing:0.3px}
+.form-group select,.form-group input{
+  width:100%;padding:10px 14px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);font-family:var(--font);
+  font-size:13px;outline:none;transition:border-color 0.2s
+}
 .form-group select:focus,.form-group input:focus{border-color:var(--accent)}
 .form-group select option{background:var(--bg3)}
-.btn-predict{width:100%;padding:14px;background:linear-gradient(135deg,#0ea5e9,#38bdf8);border:none;border-radius:10px;color:#000;font-weight:700;font-size:15px;cursor:pointer;font-family:var(--font);transition:opacity 0.2s}
-.btn-predict:hover{opacity:0.9}
-.btn-secondary{width:100%;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-weight:600;font-size:14px;cursor:pointer;font-family:var(--font);transition:all 0.2s;margin-top:0.5rem}
-.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
-.result-big{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:1.5rem;text-align:center;margin-top:1rem}
-.congestion-bar{width:100%;height:8px;background:var(--bg4);border-radius:4px;margin-top:12px;overflow:hidden}
-.congestion-fill{height:100%;border-radius:4px;transition:width 0.6s}
-.fi-item{margin-bottom:10px}
-.fi-header{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+input[type=range]{
+  width:100%;-webkit-appearance:none;height:4px;
+  border-radius:2px;background:var(--bg4);outline:none
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;
+  border-radius:50%;background:var(--accent);cursor:pointer
+}
+.btn-predict{
+  width:100%;padding:13px;
+  background:linear-gradient(135deg,#6c63ff,#a855f7);
+  border:none;border-radius:12px;color:#fff;
+  font-weight:700;font-size:14px;cursor:pointer;
+  font-family:var(--font);transition:opacity 0.2s,transform 0.2s;
+  letter-spacing:-0.2px
+}
+.btn-predict:hover{opacity:0.9;transform:translateY(-1px)}
+
+/* ── RESULT ── */
+.result-big{
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:14px;padding:1.5rem;text-align:center;margin-top:1rem
+}
+.congestion-bar{width:100%;height:6px;background:var(--bg4);border-radius:3px;margin-top:12px;overflow:hidden}
+.congestion-fill{height:100%;border-radius:3px;transition:width 0.6s}
+
+/* ── PEAK ITEMS ── */
+.peak-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.peak-item:last-child{border-bottom:none}
+.peak-time{font-family:var(--mono);font-size:13px;font-weight:500;min-width:75px;color:var(--text)}
+.peak-bar-wrap{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.peak-bar{height:100%;border-radius:3px;transition:width 0.6s}
+.peak-vol{font-family:var(--mono);font-size:12px;color:var(--text3);min-width:60px;text-align:right}
+
+/* ── FEATURE IMPORTANCE ── */
+.fi-item{margin-bottom:12px}
+.fi-header{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
 .fi-pct{font-family:var(--mono);color:var(--accent);font-size:12px}
-.fi-bar-bg{height:6px;background:var(--bg3);border-radius:3px}
-.fi-bar{height:6px;border-radius:3px;transition:width 0.6s}
+.fi-bar-bg{height:5px;background:var(--bg3);border-radius:3px}
+.fi-bar{height:5px;border-radius:3px;transition:width 0.8s}
+
+/* ── TAGS ── */
 .tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
-.tag-low{background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
-.tag-medium{background:rgba(56,189,248,0.15);color:var(--accent);border:1px solid rgba(56,189,248,0.3)}
-.tag-high{background:rgba(234,179,8,0.15);color:var(--yellow);border:1px solid rgba(234,179,8,0.3)}
-.tag-severe{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
+.tag-low{background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.25)}
+.tag-medium{background:rgba(245,158,11,0.12);color:var(--yellow);border:1px solid rgba(245,158,11,0.25)}
+.tag-high{background:rgba(249,115,22,0.12);color:var(--orange);border:1px solid rgba(249,115,22,0.25)}
+.tag-severe{background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.25)}
+
+/* ── INFO LIST ── */
 .info-list{list-style:none;display:flex;flex-direction:column;gap:10px}
 .info-list li{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text2);line-height:1.5}
-.info-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);margin-top:6px;flex-shrink:0}
+.info-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);margin-top:6px;flex-shrink:0}
+
+/* ── HEATMAP ── */
+.hm-cell{
+  height:28px;border-radius:5px;display:flex;align-items:center;
+  justify-content:center;font-size:9px;font-family:var(--mono);
+  color:rgba(255,255,255,0.7);cursor:pointer;transition:transform 0.15s
+}
+.hm-cell:hover{transform:scale(1.1);z-index:5;position:relative}
+
+/* ── CALENDAR ── */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day-name{font-size:10px;color:var(--text3);text-align:center;padding:4px 0}
+.cal-cell{
+  aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;cursor:pointer;
+  font-size:11px;transition:transform 0.1s
+}
+.cal-cell:hover{transform:scale(1.08);z-index:2}
+
+/* ── SLIDER ── */
 .slider-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px}
 .slider-val{color:var(--accent);font-weight:600;font-family:var(--mono)}
-input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--bg4);outline:none}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.cal-day-name{font-size:11px;color:var(--text3);text-align:center;padding:4px 0}
-.cal-cell{aspect-ratio:1;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:11px;transition:transform 0.1s}
-.cal-cell:hover{transform:scale(1.1);z-index:2}
-.section-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:1rem;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
-.section-title::before{content:'';display:block;width:3px;height:14px;background:var(--accent);border-radius:2px}
-.map-banner{background:linear-gradient(135deg,rgba(56,189,248,0.1),rgba(168,85,247,0.1));border:1px solid var(--border2);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between}
-.map-btn{padding:12px 28px;background:linear-gradient(135deg,#0ea5e9,#38bdf8);border:none;border-radius:10px;color:#000;font-weight:700;font-size:14px;cursor:pointer;font-family:var(--font);text-decoration:none;display:inline-block}
+
+/* ── MAP BANNER ── */
+.map-banner{
+  background:linear-gradient(135deg,rgba(108,99,255,0.1),rgba(168,85,247,0.08));
+  border:1px solid rgba(108,99,255,0.2);border-radius:16px;
+  padding:1.5rem 2rem;margin-bottom:1.5rem;
+  display:flex;align-items:center;justify-content:space-between
+}
+.map-btn{
+  padding:12px 24px;background:linear-gradient(135deg,#6c63ff,#a855f7);
+  border:none;border-radius:10px;color:#fff;font-weight:700;
+  font-size:13px;cursor:pointer;font-family:var(--font);
+  text-decoration:none;display:inline-block;transition:opacity 0.2s
+}
+.map-btn:hover{opacity:0.85}
+
+/* ── API BADGE ── */
+.api-ok{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.25);border-radius:20px;padding:3px 10px;font-size:11px}
+.api-err{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.25);border-radius:20px;padding:3px 10px;font-size:11px}
+
+/* ── SECTION DIVIDER ── */
+.section-divider{display:flex;align-items:center;gap:1rem;margin:2rem 0 1.5rem}
+.section-divider-line{flex:1;height:1px;background:var(--border)}
+.section-divider-text{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap}
+
+/* ── STAT TABLE ── */
+.stat-table{width:100%;border-collapse:collapse;font-size:13px}
+.stat-table th{padding:10px 12px;text-align:left;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
+.stat-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2)}
+.stat-table tr:hover td{background:rgba(255,255,255,0.02)}
+.stat-table tr:last-child td{border-bottom:none}
+.mono{font-family:var(--mono);color:var(--text)}
+
+/* ── RESPONSIVE ── */
 @media(max-width:1200px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr 1fr}.grid-2-1,.grid-1-2{grid-template-columns:1fr}}
-@media(max-width:768px){.content{padding:1rem}.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+@media(max-width:768px){.main{padding:0 1rem 2rem}.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}.hero-title{font-size:3rem}.nav-cards{height:auto;flex-direction:column}.nav-card{height:80px}}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+.shiny-text {
+  display: inline-block;
+  background-image: linear-gradient(120deg, #94a3b8 0%, #94a3b8 35%, #ffffff 50%, #94a3b8 65%, #94a3b8 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine 3s linear infinite;
+}
+.shiny-text-accent {
+  display: inline-block;
+  background-image: linear-gradient(120deg, #38bdf8 0%, #38bdf8 35%, #ffffff 50%, #38bdf8 65%, #38bdf8 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine 2s linear infinite;
+}
+@keyframes shine {
+  0%   { background-position: 150% center; }
+  100% { background-position: -50% center; }
+}
+.light-pillar-wrap {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.light-pillar-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+  mix-blend-mode: screen;
+  opacity: 0.6;
+}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+#lightPillarBg {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+#lightPillarBg canvas {
+  width: 100% !important;
+  height: 100% !important;
+  mix-blend-mode: screen;
+  opacity: 0.55;
+}
+.shiny-text-accent {
+  display: inline-block;
+  background-image: linear-gradient(120deg, #38bdf8 0%, #38bdf8 30%, #ffffff 50%, #38bdf8 70%, #38bdf8 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine 2s linear infinite;
+}
+.shiny-text {
+  display: inline-block;
+  background-image: linear-gradient(120deg, #94a3b8 0%, #94a3b8 30%, #ffffff 50%, #94a3b8 70%, #94a3b8 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine 3s linear infinite;
+}
+@keyframes shine {
+  0%   { background-position: 150% center; }
+  100% { background-position: -50% center; }
+}
 </style>
 </head>
-<body>
+<body><div id="lightPillarBg"></div>
 
-<div class="header">
-  <div class="logo">
-    <div class="logo-icon">🚦</div>
-    <div>
-      <div class="logo-text">TrafficIQ</div>
-      <div class="logo-sub">Urban Congestion Intelligence</div>
+<!-- NAV -->
+<div class="nav-container">
+  <nav class="nav" id="mainNav">
+    <div class="nav-top">
+      <div class="hamburger" id="hamburger" onclick="toggleNav()">
+        <div class="hamburger-line"></div>
+        <div class="hamburger-line"></div>
+      </div>
+      <div class="nav-center">
+        <div class="nav-logo">
+          <div class="nav-logo-icon">🚦</div>
+          <div>
+            <div class="nav-logo-text"><span class="shiny-text-accent"><span class="shiny-text-accent">TrafficIQ</span></span></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="apiBadge" class="api-err" style="font-size:11px">API...</span>
+        <div class="nav-pill"><div class="nav-dot"></div>Live</div>
+        <button class="nav-cta" onclick="showSection('main')">Dashboard →</button>
+      </div>
     </div>
-  </div>
-  <div class="header-right">
-    <span id="apiBadge" class="api-badge api-err">API...</span>
-    <div class="live-badge"><div class="live-dot"></div>Live Analysis</div>
-    <div class="model-badge">XGBoost R²=0.9340</div>
-    <a href="map_page.html" class="map-badge">🗺️ Map View</a>
-  </div>
+    <div class="nav-cards" id="navCards">
+      <div class="nav-card" style="background:#0D0716;color:#fff" onclick="showSection('main');toggleNav()">
+        <div class="nav-card-label">Dashboard</div>
+        <div class="nav-card-links">
+          <a class="nav-card-link" onclick="showPage('overview',null)">Overview</a>
+          <a class="nav-card-link" onclick="showPage('heatmap',null)">Heatmap</a>
+          <a class="nav-card-link" onclick="showPage('patterns',null)">Patterns</a>
+        </div>
+      </div>
+      <div class="nav-card" style="background:#170D27;color:#fff" onclick="showSection('main');toggleNav()">
+        <div class="nav-card-label">Analysis</div>
+        <div class="nav-card-links">
+          <a class="nav-card-link" onclick="showPage('weather',null)">Weather Impact</a>
+          <a class="nav-card-link" onclick="showPage('prediction',null)">Live Prediction</a>
+          <a class="nav-card-link" onclick="showPage('forecast',null)">24h Forecast</a>
+        </div>
+      </div>
+      <div class="nav-card" style="background:#1A0D27;color:#fff" onclick="showSection('main');toggleNav()">
+        <div class="nav-card-label">Insights</div>
+        <div class="nav-card-links">
+          <a class="nav-card-link" href="eda.html">EDA</a>
+          <a class="nav-card-link" href="features.html">Features</a>
+          <a class="nav-card-link" href="evaluation.html">Evaluation</a>
+        </div>
+      </div>
+    </div>
+  </nav>
 </div>
 
-<nav class="nav">
-  <button class="nav-btn active" onclick="showPage('overview',this)">📊 Overview</button>
-  <button class="nav-btn" onclick="showPage('heatmap',this)">🌡️ Heatmap</button>
-  <button class="nav-btn" onclick="showPage('patterns',this)">📈 Patterns</button>
-  <button class="nav-btn" onclick="showPage('weather',this)">🌤️ Weather</button>
-  <button class="nav-btn" onclick="showPage('prediction',this)">🔮 Prediction</button>
-  <button class="nav-btn" onclick="showPage('forecast',this)">📅 24h Forecast</button>
-  <button class="nav-btn" onclick="showPage('scenario',this)">⚙️ Scenario</button>
-  <button class="nav-btn" onclick="showPage('insights',this)">🧠 ML Insights</button>
-  <button class="nav-btn" onclick="showPage('calendar',this)">🗓️ Calendar</button>
-  <a href="eda.html" class="nav-link">📊 EDA</a>
-<a href="features.html" class="nav-link">⚙️ Features</a>
-<a href="evaluation.html" class="nav-link">📈 Evaluation</a>
-<a href="eda.html" class="nav-link">📊 EDA</a>
-<a href="features.html" class="nav-link">⚙️ Features</a>
-<a href="evaluation.html" class="nav-link">📈 Evaluation</a>
-<a href="map_page.html" class="nav-link">🗺️ Map View ↗</a>
-</nav>
-
-<div class="content">
-
-<!-- OVERVIEW -->
-<div class="page active" id="page-overview">
-  <!-- Map Banner -->
-  <div class="map-banner">
-    <div>
-      <div style="font-size:16px;font-weight:700;margin-bottom:4px">🗺️ Interactive Traffic Map</div>
-      <div style="font-size:13px;color:var(--text2)">Live congestion markers · Route estimator · Spike predictor · Traffic heatmap</div>
+<!-- HERO -->
+<section class="hero" id="heroSection">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge">🚦 Urban Traffic Congestion Intelligence System</div>
+    <h1 class="hero-title">
+      Predict Traffic<br>
+      <span class="hero-title-accent">Before It Happens</span>
+    </h1>
+    <p class="hero-sub">
+      ML-powered congestion intelligence using XGBoost R²=0.9340 trained on 48,204 real traffic records. Real-time predictions, heatmaps, route analysis.
+    </p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="showSection('main')">Open Dashboard →</button>
+      <a href="map_page.html" class="btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;padding:14px 28px;border-radius:12px;font-weight:600;font-size:15px;color:var(--text);background:rgba(255,255,255,0.06);border:1px solid var(--border2)">🗺️ Map View</a>
     </div>
-    <a href="map_page.html" class="map-btn">Open Map View →</a>
-  </div>
-
-  <div class="grid-4">
-    <div class="card kpi"><div class="kpi-val" id="kpi-peak" style="color:#38bdf8">--</div><div class="kpi-label">Peak Hour Volume</div><div class="kpi-delta up" id="kpi-peak-sub">Loading...</div></div>
-    <div class="card kpi"><div class="kpi-val" id="kpi-avg" style="color:#a855f7">--</div><div class="kpi-label">Avg Volume/hr</div><div class="kpi-delta">All time average</div></div>
-    <div class="card kpi"><div class="kpi-val" style="color:#22c55e">0.9340</div><div class="kpi-label">XGBoost R²</div><div class="kpi-delta down">MAE = 286.8 veh/hr</div></div>
-    <div class="card kpi"><div class="kpi-val" id="kpi-rec" style="color:#f97316">--</div><div class="kpi-label">Total Records</div><div class="kpi-delta">2012 → 2018</div></div>
-  </div>
-
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">24-Hour Average Traffic Profile</div>
-      <div class="chart-wrap h280"><canvas id="chartHourly"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Congestion Level Distribution</div>
-      <div class="chart-wrap h280"><canvas id="chartDist"></canvas></div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="hero-stat-val" style="color:#6c63ff">0.9340</div><div class="hero-stat-label">XGBoost R²</div></div>
+      <div class="hero-stat"><div class="hero-stat-val" style="color:#22c55e">48K</div><div class="hero-stat-label">Records</div></div>
+      <div class="hero-stat"><div class="hero-stat-val" style="color:#a855f7">16</div><div class="hero-stat-label">Models Tested</div></div>
+      <div class="hero-stat"><div class="hero-stat-val" style="color:#f59e0b">286.8</div><div class="hero-stat-label">MAE</div></div>
     </div>
   </div>
+</section>
 
-  <div class="grid-2-1">
-    <div class="card">
-      <div class="card-title">Peak Congestion Windows</div>
-      <div id="peakWindows"><div style="padding:2rem;text-align:center;color:var(--text3)">Loading...</div></div>
+<!-- MAIN DASHBOARD -->
+<section class="main" id="mainSection" style="display:none;padding-top:100px">
+
+  <!-- TABS -->
+  <div class="tabs" id="mainTabs">
+    <button class="tab active" onclick="showPage('overview',this)">📊 Overview</button>
+    <button class="tab" onclick="showPage('heatmap',this)">🌡️ Heatmap</button>
+    <button class="tab" onclick="showPage('patterns',this)">📈 Patterns</button>
+    <button class="tab" onclick="showPage('weather',this)">🌤️ Weather</button>
+    <button class="tab" onclick="showPage('prediction',this)">🔮 Prediction</button>
+    <button class="tab" onclick="showPage('forecast',this)">📅 24h Forecast</button>
+    <button class="tab" onclick="showPage('scenario',this)">⚙️ Scenario</button>
+    <button class="tab" onclick="showPage('insights',this)">🧠 ML Insights</button>
+    <button class="tab" onclick="showPage('calendar',this)">🗓️ Calendar</button>
+    <a href="map_page.html" class="tab" style="text-decoration:none;color:var(--green)">🗺️ Map ↗</a>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="page active" id="page-overview">
+    <div class="map-banner">
+      <div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:4px">🗺️ Interactive Traffic Map</div>
+        <div style="font-size:13px;color:var(--text2)">Live congestion markers · Route estimator · Spike predictor · Heatmap</div>
+      </div>
+      <a href="map_page.html" class="map-btn">Open Map →</a>
+    </div>
+    <div class="grid-4">
+      <div class="kpi" style="--kpi-color:rgba(108,99,255,0.1)"><div class="kpi-val" id="kpi-peak" style="color:#6c63ff">--</div><div class="kpi-label">Peak Hour Volume</div><div class="kpi-sub" id="kpi-peak-sub">Loading...</div></div>
+      <div class="kpi" style="--kpi-color:rgba(168,85,247,0.1)"><div class="kpi-val" id="kpi-avg" style="color:#a855f7">--</div><div class="kpi-label">Avg Volume/hr</div><div class="kpi-sub">All time average</div></div>
+      <div class="kpi" style="--kpi-color:rgba(34,197,94,0.1)"><div class="kpi-val" style="color:#22c55e">0.9340</div><div class="kpi-label">XGBoost R²</div><div class="kpi-sub">MAE = 286.8 veh/hr</div></div>
+      <div class="kpi" style="--kpi-color:rgba(249,115,22,0.1)"><div class="kpi-val" id="kpi-rec" style="color:#f97316">--</div><div class="kpi-label">Total Records</div><div class="kpi-sub">2012 → 2018</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">24-Hour Traffic Profile</div><div class="chart-wrap h280"><canvas id="chartHourly"></canvas></div></div>
+      <div class="card"><div class="card-title">Congestion Distribution</div><div class="chart-wrap h280"><canvas id="chartDist"></canvas></div></div>
+    </div>
+    <div class="grid-2-1">
+      <div class="card"><div class="card-title">Peak Congestion Windows</div><div id="peakWindows"><div style="text-align:center;padding:2rem;color:var(--text3)">Loading...</div></div></div>
+      <div class="card"><div class="card-title">Risk Score</div><div style="text-align:center;padding:1rem"><canvas id="chartRisk" width="160" height="160" style="display:inline-block"></canvas><div style="margin-top:12px"><div style="font-size:36px;font-weight:800;font-family:var(--mono);color:#ef4444" id="riskNum">--</div><div style="font-size:11px;color:var(--text3)">Peak Hour Risk / 100</div></div></div></div>
+    </div>
+  </div>
+
+  <!-- HEATMAP -->
+  <div class="page" id="page-heatmap">
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-title">Traffic Congestion Heatmap — Day × Hour <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">Hover for details</span></div>
+      <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;font-size:12px;color:var(--text3)">
+        <span>Low</span>
+        <div style="display:flex;gap:2px">
+          <div style="width:20px;height:12px;border-radius:3px;background:#1a1a3c"></div>
+          <div style="width:20px;height:12px;border-radius:3px;background:#2d2d6b"></div>
+          <div style="width:20px;height:12px;border-radius:3px;background:#f59e0b"></div>
+          <div style="width:20px;height:12px;border-radius:3px;background:#f97316"></div>
+          <div style="width:20px;height:12px;border-radius:3px;background:#ef4444"></div>
+        </div>
+        <span>High</span>
+      </div>
+      <div id="heatmapContainer"></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Congestion by Hour</div><div class="chart-wrap h250"><canvas id="chartHourCong"></canvas></div></div>
+      <div class="card"><div class="card-title">Traffic by Day</div><div class="chart-wrap h250"><canvas id="chartDOW"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- PATTERNS -->
+  <div class="page" id="page-patterns">
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-title">Weekday vs Weekend Traffic Patterns</div>
+      <div class="chart-wrap h320"><canvas id="chartWkWe"></canvas></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Monthly Trends</div><div class="chart-wrap h250"><canvas id="chartMonthly"></canvas></div></div>
+      <div class="card"><div class="card-title">Traffic by Day of Week</div><div class="chart-wrap h250"><canvas id="chartDayBar"></canvas></div></div>
     </div>
     <div class="card">
-      <div class="card-title">Risk Score</div>
-      <div style="text-align:center;padding:1rem">
-        <canvas id="chartRisk" width="160" height="160" style="display:inline-block"></canvas>
-        <div style="margin-top:12px">
-          <div style="font-size:36px;font-weight:700;font-family:var(--mono);color:#ef4444" id="riskNum">--</div>
-          <div style="font-size:12px;color:var(--text3)">Peak Hour Risk / 100</div>
+      <div class="card-title">Key Traffic Insights</div>
+      <div class="grid-3" style="margin-bottom:0">
+        <div style="padding:1rem;background:var(--bg3);border-radius:12px;border:1px solid var(--border)"><div style="font-size:13px;font-weight:600;color:var(--accent2);margin-bottom:8px">🌅 Morning Rush</div><ul class="info-list"><li><div class="info-dot"></div>Peak 7–9 AM on weekdays</li><li><div class="info-dot"></div>67% higher than weekend AM</li><li><div class="info-dot"></div>Avg 3,600+ vehicles/hr</li></ul></div>
+        <div style="padding:1rem;background:var(--bg3);border-radius:12px;border:1px solid var(--border)"><div style="font-size:13px;font-weight:600;color:var(--orange);margin-bottom:8px">🌆 Evening Rush</div><ul class="info-list"><li><div class="info-dot" style="background:var(--orange)"></div>Peak 4–6 PM worst period</li><li><div class="info-dot" style="background:var(--orange)"></div>Up to 5,800 vehicles/hr</li><li><div class="info-dot" style="background:var(--orange)"></div>Lasts ~3 hours on avg</li></ul></div>
+        <div style="padding:1rem;background:var(--bg3);border-radius:12px;border:1px solid var(--border)"><div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:8px">🌙 Off-Peak</div><ul class="info-list"><li><div class="info-dot" style="background:var(--green)"></div>12 AM–5 AM: Free flow</li><li><div class="info-dot" style="background:var(--green)"></div>Under 600 vehicles/hr</li><li><div class="info-dot" style="background:var(--green)"></div>Best for heavy transport</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEATHER -->
+  <div class="page" id="page-weather">
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Avg Traffic by Weather</div><div class="chart-wrap h300"><canvas id="chartWeather"></canvas></div></div>
+      <div class="card"><div class="card-title">Weather Impact Analysis</div><div id="weatherTable" style="margin-top:0.5rem"></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Temperature vs Traffic</div><div class="chart-wrap h250"><canvas id="chartTemp"></canvas></div></div>
+      <div class="card">
+        <div class="card-title">Severe Weather Analysis</div>
+        <div style="margin-top:0.5rem">
+          <div style="margin-bottom:1rem;padding:1rem;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);border-radius:10px"><div style="font-weight:600;color:var(--red);margin-bottom:6px">❄️ Snow Conditions</div><div style="font-size:13px;color:var(--text2)">Traffic drops by <strong style="color:var(--red)">45%</strong> vs clear weather.</div></div>
+          <div style="margin-bottom:1rem;padding:1rem;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:10px"><div style="font-weight:600;color:var(--yellow);margin-bottom:6px">🌧️ Rain / Thunderstorm</div><div style="font-size:13px;color:var(--text2)">Volume reduces <strong style="color:var(--yellow)">26–35%</strong>.</div></div>
+          <div style="padding:1rem;background:rgba(108,99,255,0.06);border:1px solid rgba(108,99,255,0.15);border-radius:10px"><div style="font-weight:600;color:var(--accent2);margin-bottom:6px">☁️ Fog / Mist</div><div style="font-size:13px;color:var(--text2)">Visibility issues cause <strong style="color:var(--accent2)">15–19%</strong> reduction.</div></div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- HEATMAP -->
-<div class="page" id="page-heatmap">
-  <div class="card" style="margin-bottom:1.5rem">
-    <div class="card-title">Traffic Congestion Heatmap — Day × Hour <span>Avg vehicles/hr</span></div>
-    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;font-size:12px;color:var(--text3)">
-      <span>Low</span>
-      <div style="display:flex;gap:2px">
-        <div style="width:20px;height:14px;border-radius:3px;background:#1a3a5c"></div>
-        <div style="width:20px;height:14px;border-radius:3px;background:#1e7fa0"></div>
-        <div style="width:20px;height:14px;border-radius:3px;background:#eab308"></div>
-        <div style="width:20px;height:14px;border-radius:3px;background:#f97316"></div>
-        <div style="width:20px;height:14px;border-radius:3px;background:#ef4444"></div>
+  <!-- PREDICTION -->
+  <div class="page" id="page-prediction">
+    <div class="grid-1-2">
+      <div class="card">
+        <div class="card-title">🔮 Live Predictor</div>
+        <div style="display:grid;gap:0.75rem">
+          <div class="form-group"><label>Day of Week</label><select id="pred-dow"><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option></select></div>
+          <div class="form-group"><label>Hour of Day</label><select id="pred-hour"><option value="0">12:00 AM</option><option value="1">1:00 AM</option><option value="2">2:00 AM</option><option value="3">3:00 AM</option><option value="4">4:00 AM</option><option value="5">5:00 AM</option><option value="6">6:00 AM</option><option value="7" selected>7:00 AM</option><option value="8">8:00 AM</option><option value="9">9:00 AM</option><option value="10">10:00 AM</option><option value="11">11:00 AM</option><option value="12">12:00 PM</option><option value="13">1:00 PM</option><option value="14">2:00 PM</option><option value="15">3:00 PM</option><option value="16">4:00 PM</option><option value="17">5:00 PM</option><option value="18">6:00 PM</option><option value="19">7:00 PM</option><option value="20">8:00 PM</option><option value="21">9:00 PM</option><option value="22">10:00 PM</option><option value="23">11:00 PM</option></select></div>
+          <div class="form-group"><label>Month</label><select id="pred-month"><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6" selected>June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+          <div class="form-group"><label>Weather</label><select id="pred-weather"><option>Clear</option><option>Clouds</option><option>Rain</option><option>Snow</option><option>Mist</option><option>Drizzle</option><option>Thunderstorm</option></select></div>
+          <div class="form-group"><label>Temp (°C): <span id="tempVal" style="color:var(--accent)">15</span></label><input type="range" id="pred-temp" min="-20" max="40" value="15" oninput="document.getElementById('tempVal').textContent=this.value"></div>
+          <div class="form-group"><label>Rain (mm/h): <span id="rainVal" style="color:var(--accent)">0</span></label><input type="range" id="pred-rain" min="0" max="50" value="0" oninput="document.getElementById('rainVal').textContent=this.value"></div>
+          <div class="form-group"><label>Snow (mm/h): <span id="snowVal" style="color:var(--accent)">0</span></label><input type="range" id="pred-snow" min="0" max="20" value="0" oninput="document.getElementById('snowVal').textContent=this.value"></div>
+          <button class="btn-predict" onclick="runPrediction()">🚦 Predict Congestion</button>
+        </div>
       </div>
-      <span>High</span>
-      <span style="margin-left:auto;font-style:italic">Hover cells for details</span>
+      <div>
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-title">Prediction Result</div>
+          <div class="result-big">
+            <div style="font-size:40px;font-weight:800;font-family:var(--mono)" id="resVolume">---</div>
+            <div style="font-size:13px;color:var(--text2);margin-top:4px">vehicles / hour</div>
+            <div style="font-size:22px;font-weight:700;margin-top:12px" id="resLevel">Run prediction</div>
+            <div style="font-size:13px;color:var(--text2);margin-top:4px">Risk: <span id="resRisk" style="font-family:var(--mono);color:var(--accent)">--</span>/100</div>
+            <div class="congestion-bar"><div class="congestion-fill" id="resFill" style="width:0%"></div></div>
+          </div>
+          <div style="margin-top:1rem">
+            <div class="section-divider" style="margin:0.75rem 0"><div class="section-divider-line"></div><div class="section-divider-text">Factors</div><div class="section-divider-line"></div></div>
+            <ul class="info-list" id="resFactors"><li><div class="info-dot"></div>Run prediction to see factors</li></ul>
+          </div>
+        </div>
+        <div class="card"><div class="card-title">Risk Gauge</div><div style="text-align:center"><canvas id="chartGauge" height="140"></canvas></div></div>
+      </div>
     </div>
-    <div id="heatmapContainer"></div>
   </div>
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">Congestion Frequency by Hour</div>
-      <div class="chart-wrap h250"><canvas id="chartHourCong"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Traffic Density by Day</div>
-      <div class="chart-wrap h250"><canvas id="chartDOW"></canvas></div>
-    </div>
-  </div>
-</div>
 
-<!-- PATTERNS -->
-<div class="page" id="page-patterns">
-  <div class="card" style="margin-bottom:1.5rem">
-    <div class="card-title">Weekday vs Weekend Traffic Patterns</div>
-    <div class="chart-wrap h320"><canvas id="chartWkWe"></canvas></div>
-  </div>
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">Monthly Traffic Volume Trends</div>
-      <div class="chart-wrap h250"><canvas id="chartMonthly"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Traffic by Day of Week</div>
-      <div class="chart-wrap h250"><canvas id="chartDayBar"></canvas></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title">Key Traffic Insights</div>
-    <div class="grid-3" style="margin-bottom:0">
-      <div style="padding:1rem;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
-        <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px">🌅 Morning Rush</div>
-        <ul class="info-list">
-          <li><div class="info-dot"></div>Peak 7–9 AM on weekdays</li>
-          <li><div class="info-dot"></div>67% higher than weekend AM</li>
-          <li><div class="info-dot"></div>Avg 3,600+ vehicles/hr</li>
-        </ul>
+  <!-- 24H FORECAST -->
+  <div class="page" id="page-forecast">
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">24-Hour Forecast</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1rem">
+        <div class="form-group"><label>Day</label><select id="fc-dow"><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option></select></div>
+        <div class="form-group"><label>Month</label><select id="fc-month"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6" selected>Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select></div>
+        <div class="form-group"><label>Weather</label><select id="fc-weather"><option>Clear</option><option>Clouds</option><option>Rain</option><option>Snow</option><option>Mist</option><option>Thunderstorm</option></select></div>
+        <div class="form-group"><label>Temp: <span id="fcTempVal" style="color:var(--accent)">15</span>°C</label><input type="range" id="fc-temp" min="-20" max="40" value="15" oninput="document.getElementById('fcTempVal').textContent=this.value"></div>
       </div>
-      <div style="padding:1rem;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
-        <div style="font-size:13px;font-weight:600;color:var(--orange);margin-bottom:8px">🌆 Evening Rush</div>
-        <ul class="info-list">
-          <li><div class="info-dot" style="background:var(--orange)"></div>Peak 4–6 PM is worst period</li>
-          <li><div class="info-dot" style="background:var(--orange)"></div>Up to 5,800 vehicles/hr</li>
-          <li><div class="info-dot" style="background:var(--orange)"></div>Lasts ~3 hours on avg</li>
-        </ul>
-      </div>
-      <div style="padding:1rem;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
-        <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:8px">🌙 Off-Peak</div>
-        <ul class="info-list">
-          <li><div class="info-dot" style="background:var(--green)"></div>12 AM – 5 AM: Free flow</li>
-          <li><div class="info-dot" style="background:var(--green)"></div>Under 600 vehicles/hr</li>
-          <li><div class="info-dot" style="background:var(--green)"></div>Best for heavy transport</li>
-        </ul>
-      </div>
+      <button class="btn-predict" onclick="runForecast()">📅 Generate Forecast</button>
     </div>
+    <div class="card" style="margin-bottom:1rem"><div class="card-title">Hourly Volume Forecast</div><div class="chart-wrap h320"><canvas id="chartForecast"></canvas></div></div>
+    <div class="grid-3" id="forecastSummary"></div>
   </div>
-</div>
 
-<!-- WEATHER -->
-<div class="page" id="page-weather">
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">Avg Traffic Volume by Weather</div>
-      <div class="chart-wrap h300"><canvas id="chartWeather"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Weather Impact Analysis</div>
-      <div id="weatherTable" style="margin-top:0.5rem"></div>
-    </div>
-  </div>
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">Temperature vs Traffic Volume</div>
-      <div class="chart-wrap h250"><canvas id="chartTemp"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Severe Weather Analysis</div>
-      <div style="margin-top:0.5rem">
-        <div style="margin-bottom:1rem;padding:1rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px">
-          <div style="font-weight:600;color:var(--red);margin-bottom:6px">❄️ Snow Conditions</div>
-          <div style="font-size:13px;color:var(--text2)">Traffic drops by <strong style="color:var(--red)">45%</strong> vs clear weather. Congestion paradoxically reduces but travel time increases.</div>
-        </div>
-        <div style="margin-bottom:1rem;padding:1rem;background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.2);border-radius:10px">
-          <div style="font-weight:600;color:var(--yellow);margin-bottom:6px">🌧️ Rain / Thunderstorm</div>
-          <div style="font-size:13px;color:var(--text2)">Volume reduces <strong style="color:var(--yellow)">26–35%</strong>. Rain suppresses non-essential travel.</div>
-        </div>
-        <div style="padding:1rem;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.2);border-radius:10px">
-          <div style="font-weight:600;color:var(--accent);margin-bottom:6px">☁️ Fog / Mist</div>
-          <div style="font-size:13px;color:var(--text2)">Visibility issues cause <strong style="color:var(--accent)">15–19%</strong> volume reduction.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- PREDICTION -->
-<div class="page" id="page-prediction">
-  <div class="grid-1-2">
-    <div class="card">
-      <div class="card-title">🔮 Live Congestion Predictor</div>
-      <div style="display:grid;gap:1rem">
-        <div class="form-group">
-          <label>Day of Week</label>
-          <select id="pred-dow">
-            <option value="0">Monday</option><option value="1">Tuesday</option>
-            <option value="2">Wednesday</option><option value="3">Thursday</option>
-            <option value="4">Friday</option><option value="5">Saturday</option>
-            <option value="6">Sunday</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Hour of Day</label>
-          <select id="pred-hour">
-            <option value="0">12:00 AM</option><option value="1">1:00 AM</option>
-            <option value="2">2:00 AM</option><option value="3">3:00 AM</option>
-            <option value="4">4:00 AM</option><option value="5">5:00 AM</option>
-            <option value="6">6:00 AM</option><option value="7" selected>7:00 AM</option>
-            <option value="8">8:00 AM</option><option value="9">9:00 AM</option>
-            <option value="10">10:00 AM</option><option value="11">11:00 AM</option>
-            <option value="12">12:00 PM</option><option value="13">1:00 PM</option>
-            <option value="14">2:00 PM</option><option value="15">3:00 PM</option>
-            <option value="16">4:00 PM</option><option value="17">5:00 PM</option>
-            <option value="18">6:00 PM</option><option value="19">7:00 PM</option>
-            <option value="20">8:00 PM</option><option value="21">9:00 PM</option>
-            <option value="22">10:00 PM</option><option value="23">11:00 PM</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Month</label>
-          <select id="pred-month">
-            <option value="1">January</option><option value="2">February</option>
-            <option value="3">March</option><option value="4">April</option>
-            <option value="5">May</option><option value="6" selected>June</option>
-            <option value="7">July</option><option value="8">August</option>
-            <option value="9">September</option><option value="10">October</option>
-            <option value="11">November</option><option value="12">December</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Weather Condition</label>
-          <select id="pred-weather">
-            <option>Clear</option><option>Clouds</option><option>Rain</option>
-            <option>Snow</option><option>Mist</option><option>Drizzle</option>
-            <option>Thunderstorm</option><option>Fog</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Temperature (°C): <span id="tempVal" style="color:var(--accent)">15</span></label>
-          <input type="range" id="pred-temp" min="-20" max="40" value="15" oninput="document.getElementById('tempVal').textContent=this.value">
-        </div>
-        <div class="form-group">
-          <label>Rain (mm/h): <span id="rainVal" style="color:var(--accent)">0</span></label>
-          <input type="range" id="pred-rain" min="0" max="50" value="0" oninput="document.getElementById('rainVal').textContent=this.value">
-        </div>
-        <div class="form-group">
-          <label>Snow (mm/h): <span id="snowVal" style="color:var(--accent)">0</span></label>
-          <input type="range" id="pred-snow" min="0" max="20" value="0" oninput="document.getElementById('snowVal').textContent=this.value">
-        </div>
-        <button class="btn-predict" onclick="runPrediction()">🚦 Predict Congestion</button>
-        <a href="map_page.html" class="btn-secondary" style="text-align:center;text-decoration:none;display:block;padding:12px">🗺️ View on Map</a>
-      </div>
-    </div>
-    <div>
-      <div class="card" style="margin-bottom:1rem">
-        <div class="card-title">Prediction Result</div>
-        <div class="result-big">
-          <div style="font-size:40px;font-weight:700;font-family:var(--mono)" id="resVolume">---</div>
-          <div style="font-size:13px;color:var(--text2);margin-top:4px">vehicles / hour</div>
-          <div style="font-size:22px;font-weight:700;margin-top:12px" id="resLevel">Run prediction</div>
-          <div style="font-size:13px;color:var(--text2);margin-top:4px">Risk: <span id="resRisk" style="font-family:var(--mono);color:var(--accent)">--</span>/100</div>
-          <div class="congestion-bar"><div class="congestion-fill" id="resFill" style="width:0%"></div></div>
-        </div>
-        <div style="margin-top:1rem">
-          <div class="section-title">Contributing Factors</div>
-          <ul class="info-list" id="resFactors"><li><div class="info-dot"></div>Run prediction to see factors</li></ul>
+  <!-- SCENARIO -->
+  <div class="page" id="page-scenario">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">⚙️ Scenario Simulator</div>
+        <div style="display:grid;gap:1.2rem">
+          <div class="form-group"><label>Base Day</label><select id="sc-dow"><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option></select></div>
+          <div><div class="slider-label"><span>🌧️ Weather Severity</span><span class="slider-val" id="wSevVal">0%</span></div><input type="range" id="sc-wsev" min="0" max="100" value="0" oninput="document.getElementById('wSevVal').textContent=this.value+'%'"></div>
+          <div><div class="slider-label"><span>🎪 Special Event</span><span class="slider-val" id="sEvtVal">0%</span></div><input type="range" id="sc-sevt" min="0" max="100" value="0" oninput="document.getElementById('sEvtVal').textContent=this.value+'%'"></div>
+          <div><div class="slider-label"><span>🚧 Road Incident</span><span class="slider-val" id="incVal">0%</span></div><input type="range" id="sc-inc" min="0" max="100" value="0" oninput="document.getElementById('incVal').textContent=this.value+'%'"></div>
+          <div><div class="slider-label"><span>🏠 Remote Work</span><span class="slider-val" id="rwVal">0%</span></div><input type="range" id="sc-rw" min="0" max="100" value="0" oninput="document.getElementById('rwVal').textContent=this.value+'%'"></div>
+          <button class="btn-predict" onclick="runScenario()">🔄 Simulate</button>
         </div>
       </div>
       <div class="card">
-        <div class="card-title">Risk Gauge</div>
-        <div style="text-align:center"><canvas id="chartGauge" height="140"></canvas></div>
+        <div class="card-title">Scenario Impact</div>
+        <div class="chart-wrap h320"><canvas id="chartScenario"></canvas></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;text-align:center">
+          <div style="background:var(--bg3);border-radius:10px;padding:1rem"><div style="font-size:11px;color:var(--text3)">BASE AVG</div><div style="font-size:24px;font-weight:800;font-family:var(--mono);color:var(--accent)" id="scBaseAvg">--</div></div>
+          <div style="background:var(--bg3);border-radius:10px;padding:1rem"><div style="font-size:11px;color:var(--text3)">MODIFIED AVG</div><div style="font-size:24px;font-weight:800;font-family:var(--mono);color:var(--orange)" id="scModAvg">--</div></div>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- 24H FORECAST -->
-<div class="page" id="page-forecast">
-  <div class="card" style="margin-bottom:1rem">
-    <div class="card-title">24-Hour Congestion Forecast</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1rem">
-      <div class="form-group">
-        <label>Day</label>
-        <select id="fc-dow">
-          <option value="0">Monday</option><option value="1">Tuesday</option>
-          <option value="2">Wednesday</option><option value="3">Thursday</option>
-          <option value="4">Friday</option><option value="5">Saturday</option>
-          <option value="6">Sunday</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Month</label>
-        <select id="fc-month">
-          <option value="1">Jan</option><option value="2">Feb</option>
-          <option value="3">Mar</option><option value="4">Apr</option>
-          <option value="5">May</option><option value="6" selected>Jun</option>
-          <option value="7">Jul</option><option value="8">Aug</option>
-          <option value="9">Sep</option><option value="10">Oct</option>
-          <option value="11">Nov</option><option value="12">Dec</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Weather</label>
-        <select id="fc-weather">
-          <option>Clear</option><option>Clouds</option><option>Rain</option>
-          <option>Snow</option><option>Mist</option><option>Thunderstorm</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Temp: <span id="fcTempVal" style="color:var(--accent)">15</span>°C</label>
-        <input type="range" id="fc-temp" min="-20" max="40" value="15" oninput="document.getElementById('fcTempVal').textContent=this.value">
-      </div>
+  <!-- INSIGHTS -->
+  <div class="page" id="page-insights">
+    <div class="grid-3" style="margin-bottom:1.5rem">
+      <div class="kpi" style="--kpi-color:rgba(108,99,255,0.1)"><div class="kpi-val" style="color:#6c63ff">0.9340</div><div class="kpi-label">XGBoost R²</div><div class="kpi-sub">Best ML Model</div></div>
+      <div class="kpi" style="--kpi-color:rgba(34,197,94,0.1)"><div class="kpi-val" style="color:#22c55e">286.8</div><div class="kpi-label">MAE (veh/hr)</div><div class="kpi-sub">XGBoost</div></div>
+      <div class="kpi" style="--kpi-color:rgba(168,85,247,0.1)"><div class="kpi-val" style="color:#a855f7">85.6%</div><div class="kpi-label">Class Accuracy</div><div class="kpi-sub">LOW/MED/HIGH/SEV</div></div>
     </div>
-    <button class="btn-predict" onclick="runForecast()">📅 Generate 24h Forecast</button>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Feature Importance — XGBoost</div><div id="featureImportance"></div></div>
+      <div class="card"><div class="card-title">Model Benchmark</div><div id="benchmarkTable"></div></div>
+    </div>
   </div>
-  <div class="card" style="margin-bottom:1rem">
-    <div class="card-title">Hourly Volume Forecast <span id="fcSubtitle"></span></div>
-    <div class="chart-wrap h320"><canvas id="chartForecast"></canvas></div>
-  </div>
-  <div class="grid-3" id="forecastSummary"></div>
-</div>
 
-<!-- SCENARIO -->
-<div class="page" id="page-scenario">
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">⚙️ Scenario Simulator</div>
-      <div style="display:grid;gap:1.2rem">
-        <div class="form-group">
-          <label>Base Day</label>
-          <select id="sc-dow">
-            <option value="0">Monday</option><option value="1">Tuesday</option>
-            <option value="2">Wednesday</option><option value="3">Thursday</option>
-            <option value="4">Friday</option><option value="5">Saturday</option>
-            <option value="6">Sunday</option>
-          </select>
-        </div>
-        <div>
-          <div class="slider-label"><span>🌧️ Weather Severity</span><span class="slider-val" id="wSevVal">0%</span></div>
-          <input type="range" id="sc-wsev" min="0" max="100" value="0" oninput="document.getElementById('wSevVal').textContent=this.value+'%'">
-        </div>
-        <div>
-          <div class="slider-label"><span>🎪 Special Event</span><span class="slider-val" id="sEvtVal">0%</span></div>
-          <input type="range" id="sc-sevt" min="0" max="100" value="0" oninput="document.getElementById('sEvtVal').textContent=this.value+'%'">
-        </div>
-        <div>
-          <div class="slider-label"><span>🚧 Road Incident</span><span class="slider-val" id="incVal">0%</span></div>
-          <input type="range" id="sc-inc" min="0" max="100" value="0" oninput="document.getElementById('incVal').textContent=this.value+'%'">
-        </div>
-        <div>
-          <div class="slider-label"><span>🏠 Remote Work</span><span class="slider-val" id="rwVal">0%</span></div>
-          <input type="range" id="sc-rw" min="0" max="100" value="0" oninput="document.getElementById('rwVal').textContent=this.value+'%'">
-        </div>
-        <button class="btn-predict" onclick="runScenario()">🔄 Simulate</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">Scenario Impact</div>
-      <div class="chart-wrap h320"><canvas id="chartScenario"></canvas></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;text-align:center">
-        <div style="background:var(--bg3);border-radius:8px;padding:1rem">
-          <div style="font-size:11px;color:var(--text3)">BASE AVG</div>
-          <div style="font-size:24px;font-weight:700;font-family:var(--mono);color:var(--accent)" id="scBaseAvg">--</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:8px;padding:1rem">
-          <div style="font-size:11px;color:var(--text3)">MODIFIED AVG</div>
-          <div style="font-size:24px;font-weight:700;font-family:var(--mono);color:var(--orange)" id="scModAvg">--</div>
+  <!-- CALENDAR -->
+  <div class="page" id="page-calendar">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Peak Traffic Risk Calendar</div>
+        <div id="calendarGrid"></div>
+        <div style="display:flex;gap:12px;margin-top:1rem;font-size:11px;color:var(--text3);flex-wrap:wrap">
+          <span>🟢 LOW</span><span>🟡 MEDIUM</span><span>🟠 HIGH</span><span>🔴 SEVERE</span>
         </div>
       </div>
+      <div class="card"><div class="card-title">Hourly Risk Score</div><div class="chart-wrap h280"><canvas id="chartRiskHourly"></canvas></div></div>
     </div>
   </div>
-</div>
 
-<!-- ML INSIGHTS -->
-<div class="page" id="page-insights">
-  <div class="grid-3" style="margin-bottom:1.5rem">
-    <div class="card kpi"><div class="kpi-val" style="color:#38bdf8">0.9340</div><div class="kpi-label">XGBoost R²</div><div class="kpi-delta down">Best ML Model</div></div>
-    <div class="card kpi"><div class="kpi-val" style="color:#22c55e">286.8</div><div class="kpi-label">MAE (veh/hr)</div><div class="kpi-delta down">XGBoost</div></div>
-    <div class="card kpi"><div class="kpi-val" style="color:#a855f7">85.6%</div><div class="kpi-label">Class Accuracy</div><div class="kpi-delta down">LOW/MED/HIGH/SEV</div></div>
-  </div>
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">Feature Importance — XGBoost</div>
-      <div id="featureImportance"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Model Benchmark Results</div>
-      <div id="benchmarkTable"></div>
-    </div>
-  </div>
-</div>
-
-<!-- CALENDAR -->
-<div class="page" id="page-calendar">
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">Peak Traffic Risk Calendar <span>Last 30 days</span></div>
-      <div id="calendarGrid"></div>
-      <div style="display:flex;gap:12px;margin-top:1rem;font-size:11px;color:var(--text3);flex-wrap:wrap">
-        <span>🟢 LOW</span><span>🟡 MEDIUM</span><span>🟠 HIGH</span><span>🔴 SEVERE</span>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">Hourly Risk Score</div>
-      <div class="chart-wrap h280"><canvas id="chartRiskHourly"></canvas></div>
-    </div>
-  </div>
-</div>
-
-</div><!-- end content -->
+</section>
 
 <script>
-const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'https://web-production-29153.up.railway.app/api'
-  : 'https://web-production-29153.up.railway.app/api';
+const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000/api' : 'https://web-production-29153.up.railway.app/api';
 
-async function fetchAPI(ep, method='GET', body=null){
-  const opts={method,headers:{'Content-Type':'application/json'}};
-  if(body) opts.body=JSON.stringify(body);
-  try{ const r=await fetch(API+ep,opts); return await r.json(); }
-  catch(e){ return null; }
+// ── GSAP NAV ──────────────────────────────────────────────────
+var navOpen = false;
+var navTl   = null;
+
+function initNav(){
+  const nav   = document.getElementById('mainNav');
+  const cards = document.querySelectorAll('.nav-card');
+  gsap.set(nav, {height:60, overflow:'hidden'});
+  gsap.set(cards, {y:30, opacity:0});
+
+  navTl = gsap.timeline({paused:true});
+  navTl.to(nav, {height:260, duration:0.4, ease:'power3.out'});
+  navTl.to(cards, {y:0, opacity:1, duration:0.35, ease:'power3.out', stagger:0.07}, '-=0.15');
 }
 
-const COPTS={
-  responsive:true,maintainAspectRatio:false,
-  plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},tooltip:{backgroundColor:'#1a2235',borderColor:'rgba(99,179,237,0.3)',borderWidth:1}},
+function toggleNav(){
+  const hb = document.getElementById('hamburger');
+  if(!navOpen){
+    hb.classList.add('open');
+    navTl.play(0);
+    navOpen = true;
+  } else {
+    hb.classList.remove('open');
+    navTl.reverse();
+    navOpen = false;
+  }
+}
+
+// ── SECTION SWITCH ────────────────────────────────────────────
+function showSection(sec){
+  const hero = document.getElementById('heroSection');
+  const main = document.getElementById('mainSection');
+  if(sec === 'main'){
+    gsap.to(hero, {opacity:0, y:-30, duration:0.4, ease:'power2.in', onComplete:()=>{
+      hero.style.display='none';
+      main.style.display='block';
+      gsap.from(main, {opacity:0, y:20, duration:0.5, ease:'power3.out'});
+      if(!initialized['overview']){ initialized['overview']=true; setTimeout(initOverview,100); }
+    }});
+  } else {
+    main.style.display='none';
+    hero.style.display='flex';
+    gsap.from(hero, {opacity:0, duration:0.4, ease:'power2.out'});
+  }
+}
+
+// ── CHART OPTIONS ─────────────────────────────────────────────
+const COPTS = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{legend:{labels:{color:'#9090a8',font:{size:11}}},tooltip:{backgroundColor:'#1a1a24',borderColor:'rgba(108,99,255,0.3)',borderWidth:1}},
   scales:{
-    x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(99,179,237,0.05)'},border:{display:false}},
-    y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(99,179,237,0.07)'},border:{display:false}}
+    x:{ticks:{color:'#5a5a70',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},border:{display:false}},
+    y:{ticks:{color:'#5a5a70',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},border:{display:false}}
   }
 };
 
@@ -558,18 +805,25 @@ const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov',
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 function cong(v){
-  if(v<1000) return {level:'LOW',    color:'#22c55e',risk:Math.round(v/1000*25)};
-  if(v<3000) return {level:'MEDIUM', color:'#eab308',risk:Math.round(25+(v-1000)/2000*25)};
-  if(v<5000) return {level:'HIGH',   color:'#f97316',risk:Math.round(50+(v-3000)/2000*25)};
-  return             {level:'SEVERE', color:'#ef4444',risk:Math.min(100,Math.round(75+(v-5000)/2000*25))};
+  if(v<1000)return{level:'LOW',   color:'#22c55e',risk:Math.round(v/1000*25)};
+  if(v<3000)return{level:'MEDIUM',color:'#f59e0b',risk:Math.round(25+(v-1000)/2000*25)};
+  if(v<5000)return{level:'HIGH',  color:'#f97316',risk:Math.round(50+(v-3000)/2000*25)};
+  return          {level:'SEVERE',color:'#ef4444',risk:Math.min(100,Math.round(75+(v-5000)/2000*25))};
 }
 
-// ── CHECK API ─────────────────────────────────────────────────
+async function fetchAPI(ep,method,body){
+  method=method||'GET';
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(body)opts.body=JSON.stringify(body);
+  try{const r=await fetch(API+ep,opts);return await r.json();}
+  catch(e){return null;}
+}
+
 async function checkAPI(){
   const d=await fetchAPI('/overview');
   const b=document.getElementById('apiBadge');
-  if(d){b.textContent='API Connected';b.className='api-badge api-ok';}
-  else{b.textContent='Demo Mode';b.className='api-badge api-err';}
+  if(d){b.textContent='API ✓';b.className='api-ok';}
+  else{b.textContent='Demo';b.className='api-err';}
   return d;
 }
 
@@ -577,7 +831,6 @@ async function checkAPI(){
 async function initOverview(){
   const data=await fetchAPI('/overview');
   const hourly=data?data.hourly_avg:DEMO;
-
   if(data){
     document.getElementById('kpi-peak').textContent=data.peak_volume.toLocaleString();
     document.getElementById('kpi-peak-sub').textContent=`Peak at ${data.peak_hour}:00`;
@@ -585,33 +838,17 @@ async function initOverview(){
     document.getElementById('kpi-rec').textContent=(data.total_records/1000).toFixed(0)+'K';
     document.getElementById('riskNum').textContent=cong(data.peak_volume).risk;
   }
-
-  new Chart(document.getElementById('chartHourly'),{
-    type:'line',
-    data:{labels:HL,datasets:[{label:'Avg Volume',data:hourly,borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,0.1)',fill:true,tension:0.4,pointRadius:3,borderWidth:2}]},
-    options:{...COPTS}
-  });
-
+  new Chart(document.getElementById('chartHourly'),{type:'line',data:{labels:HL,datasets:[{label:'Avg Volume',data:hourly,borderColor:'#6c63ff',backgroundColor:'rgba(108,99,255,0.08)',fill:true,tension:0.4,pointRadius:3,borderWidth:2.5}]},options:{...COPTS}});
   const dist=data?data.congestion_dist:{LOW:28,MEDIUM:34,HIGH:22,SEVERE:16};
-  new Chart(document.getElementById('chartDist'),{
-    type:'doughnut',
-    data:{labels:['LOW','MEDIUM','HIGH','SEVERE'],datasets:[{data:[dist.LOW||28,dist.MEDIUM||34,dist.HIGH||22,dist.SEVERE||16],backgroundColor:['rgba(34,197,94,0.8)','rgba(234,179,8,0.8)','rgba(249,115,22,0.8)','rgba(239,68,68,0.8)'],borderColor:['#22c55e','#eab308','#f97316','#ef4444'],borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:11},padding:12}}}}
-  });
-
+  new Chart(document.getElementById('chartDist'),{type:'doughnut',data:{labels:['LOW','MEDIUM','HIGH','SEVERE'],datasets:[{data:[dist.LOW||28,dist.MEDIUM||34,dist.HIGH||22,dist.SEVERE||16],backgroundColor:['rgba(34,197,94,0.8)','rgba(245,158,11,0.8)','rgba(249,115,22,0.8)','rgba(239,68,68,0.8)'],borderColor:['#22c55e','#f59e0b','#f97316','#ef4444'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#9090a8',font:{size:11},padding:12}}}}});
   const peaks=await fetchAPI('/peak_windows');
   const pk=peaks||[{hour:8,volume:4156,color:'#ef4444',risk:87},{hour:17,volume:4876,color:'#ef4444',risk:93},{hour:7,volume:3812,color:'#f97316',risk:71},{hour:16,volume:4234,color:'#ef4444',risk:81},{hour:18,volume:4123,color:'#f97316',risk:78},{hour:9,volume:3654,color:'#f97316',risk:66}];
   document.getElementById('peakWindows').innerHTML=pk.map(p=>{
     const lbl=p.hour<12?`${p.hour===0?12:p.hour}:00 AM`:`${p.hour===12?12:p.hour-12}:00 PM`;
     return `<div class="peak-item"><div class="peak-time">${lbl}</div><div class="peak-bar-wrap"><div class="peak-bar" style="width:${p.risk}%;background:${p.color}"></div></div><div class="peak-vol">${p.volume.toLocaleString()}</div></div>`;
   }).join('');
-
   const riskVal=peaks?cong(pk[0].volume).risk:87;
-  new Chart(document.getElementById('chartRisk'),{
-    type:'doughnut',
-    data:{datasets:[{data:[riskVal,100-riskVal],backgroundColor:['#ef4444','rgba(239,68,68,0.1)'],borderWidth:0,cutout:'78%'}]},
-    options:{responsive:false,plugins:{legend:{display:false},tooltip:{enabled:false}}}
-  });
+  new Chart(document.getElementById('chartRisk'),{type:'doughnut',data:{datasets:[{data:[riskVal,100-riskVal],backgroundColor:['#ef4444','rgba(239,68,68,0.08)'],borderWidth:0,cutout:'78%'}]},options:{responsive:false,plugins:{legend:{display:false},tooltip:{enabled:false}}}});
 }
 
 // ── HEATMAP ───────────────────────────────────────────────────
@@ -619,11 +856,10 @@ async function initHeatmap(){
   const data=await fetchAPI('/heatmap');
   const dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   let html=`<div style="display:grid;grid-template-columns:70px repeat(24,1fr);gap:3px;margin-bottom:4px"><div></div>${HL.map(h=>`<div style="font-size:10px;color:var(--text3);text-align:center">${h}</div>`).join('')}</div>`;
-
   for(let dow=0;dow<7;dow++){
     html+=`<div style="display:grid;grid-template-columns:70px repeat(24,1fr);gap:3px;margin-bottom:3px"><div style="font-size:11px;color:var(--text3);display:flex;align-items:center">${dayNames[dow]}</div>`;
     for(let hour=0;hour<24;hour++){
-      let vol=0,color='#1a3a5c';
+      let vol=0,color='#1a1a3c';
       if(data){const cell=data.find(d=>d.dow===dow&&d.hour===hour);if(cell){vol=cell.volume;color=cell.color;}}
       else{vol=Math.round(DEMO[hour]*(dow>=5?0.6:1)*(0.85+Math.random()*0.3));color=cong(vol).color;}
       const alpha=Math.min(0.95,0.2+vol/7000*0.8);
@@ -632,18 +868,10 @@ async function initHeatmap(){
     html+='</div>';
   }
   document.getElementById('heatmapContainer').innerHTML=html;
-
-  const hourVols=Array.from({length:24},(_,h)=>{
-    if(data){const cells=data.filter(d=>d.hour===h);return cells.length?Math.round(cells.reduce((s,c)=>s+c.volume,0)/cells.length):0;}
-    return DEMO[h];
-  });
+  const hourVols=Array.from({length:24},(_,h)=>{if(data){const cells=data.filter(d=>d.hour===h);return cells.length?Math.round(cells.reduce((s,c)=>s+c.volume,0)/cells.length):0;}return DEMO[h];});
   new Chart(document.getElementById('chartHourCong'),{type:'bar',data:{labels:HL,datasets:[{label:'Avg Volume',data:hourVols,backgroundColor:hourVols.map(v=>cong(v).color+'99'),borderRadius:4,borderSkipped:false}]},options:{...COPTS}});
-
-  const dowVols=Array.from({length:7},(_,d)=>{
-    if(data){const cells=data.filter(c=>c.dow===d);return cells.length?Math.round(cells.reduce((s,c)=>s+c.volume,0)/cells.length):0;}
-    return d<5?2800+Math.random()*500:1600+Math.random()*300;
-  });
-  new Chart(document.getElementById('chartDOW'),{type:'bar',data:{labels:dayNames,datasets:[{label:'Avg Volume',data:dowVols,backgroundColor:['#38bdf8','#38bdf8','#38bdf8','#38bdf8','#38bdf8','#a855f7','#a855f7'],borderRadius:6,borderSkipped:false}]},options:{...COPTS}});
+  const dowVols=Array.from({length:7},(_,d)=>{if(data){const cells=data.filter(c=>c.dow===d);return cells.length?Math.round(cells.reduce((s,c)=>s+c.volume,0)/cells.length):0;}return d<5?2800+Math.random()*500:1600+Math.random()*300;});
+  new Chart(document.getElementById('chartDOW'),{type:'bar',data:{labels:dayNames,datasets:[{label:'Avg Volume',data:dowVols,backgroundColor:['#6c63ff','#6c63ff','#6c63ff','#6c63ff','#6c63ff','#a855f7','#a855f7'],borderRadius:6,borderSkipped:false}]},options:{...COPTS}});
 }
 
 // ── PATTERNS ──────────────────────────────────────────────────
@@ -651,28 +879,24 @@ async function initPatterns(){
   const data=await fetchAPI('/patterns');
   const wk=data?data.weekday:DEMO.map(v=>Math.round(v*1.25));
   const we=data?data.weekend:DEMO.map(v=>Math.round(v*0.65));
-  new Chart(document.getElementById('chartWkWe'),{type:'line',data:{labels:HL,datasets:[{label:'Weekday',data:wk,borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,0.08)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:3},{label:'Weekend',data:we,borderColor:'#a855f7',backgroundColor:'rgba(168,85,247,0.08)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:3}]},options:{...COPTS}});
+  new Chart(document.getElementById('chartWkWe'),{type:'line',data:{labels:HL,datasets:[{label:'Weekday',data:wk,borderColor:'#6c63ff',backgroundColor:'rgba(108,99,255,0.08)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:3},{label:'Weekend',data:we,borderColor:'#a855f7',backgroundColor:'rgba(168,85,247,0.08)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:3}]},options:{...COPTS}});
   const mo=data?data.monthly:[2800,2750,2900,3100,3200,3400,3300,3250,3100,2950,2800,2600];
-  new Chart(document.getElementById('chartMonthly'),{type:'line',data:{labels:MONTHS,datasets:[{label:'Avg Volume',data:mo,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.1)',fill:true,tension:0.4,borderWidth:2,pointRadius:4}]},options:{...COPTS}});
+  new Chart(document.getElementById('chartMonthly'),{type:'line',data:{labels:MONTHS,datasets:[{label:'Avg Volume',data:mo,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:4}]},options:{...COPTS}});
   const dw=data?data.daily:[2900,2850,2800,2780,2950,1800,1650];
-  new Chart(document.getElementById('chartDayBar'),{type:'bar',data:{labels:DAYS,datasets:[{label:'Avg Volume',data:dw,backgroundColor:dw.map((_,i)=>i<5?'rgba(56,189,248,0.7)':'rgba(168,85,247,0.7)'),borderRadius:6,borderSkipped:false}]},options:{...COPTS}});
+  new Chart(document.getElementById('chartDayBar'),{type:'bar',data:{labels:DAYS,datasets:[{label:'Avg Volume',data:dw,backgroundColor:dw.map((_,i)=>i<5?'rgba(108,99,255,0.7)':'rgba(168,85,247,0.7)'),borderRadius:6,borderSkipped:false}]},options:{...COPTS}});
 }
 
 // ── WEATHER ───────────────────────────────────────────────────
 async function initWeather(){
   const data=await fetchAPI('/weather');
   const byW=data?data.by_weather:[{weather:'Clear',avg_volume:3245},{weather:'Clouds',avg_volume:3156},{weather:'Rain',avg_volume:2456},{weather:'Snow',avg_volume:1234},{weather:'Mist',avg_volume:2789},{weather:'Drizzle',avg_volume:2634},{weather:'Thunderstorm',avg_volume:1876},{weather:'Fog',avg_volume:2234}];
-  new Chart(document.getElementById('chartWeather'),{type:'bar',data:{labels:byW.map(d=>d.weather),datasets:[{label:'Avg Volume',data:byW.map(d=>d.avg_volume),backgroundColor:['#38bdf8bb','#94a3b8bb','#3b82f6bb','#8b5cf6bb','#64748bbb','#0ea5e9bb','#6366f1bb','#475569bb'],borderRadius:6,borderSkipped:false}]},options:{...COPTS,indexAxis:'y'}});
+  new Chart(document.getElementById('chartWeather'),{type:'bar',data:{labels:byW.map(d=>d.weather),datasets:[{label:'Avg Volume',data:byW.map(d=>d.avg_volume),backgroundColor:['#6c63ffbb','#94a3b8bb','#3b82f6bb','#8b5cf6bb','#64748bbb','#0ea5e9bb','#6366f1bb','#475569bb'],borderRadius:6,borderSkipped:false}]},options:{...COPTS,indexAxis:'y'}});
   const maxVol=Math.max(...byW.map(d=>d.avg_volume));
-  document.getElementById('weatherTable').innerHTML=byW.map(d=>{
-    const pct=Math.round(d.avg_volume/maxVol*100);
-    const c=cong(d.avg_volume);
-    return `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px"><span style="color:var(--text2)">${d.weather}</span><span style="font-family:var(--mono);color:var(--accent)">${d.avg_volume.toLocaleString()}</span></div><div style="height:6px;background:var(--bg3);border-radius:3px"><div style="height:6px;width:${pct}%;background:${c.color};border-radius:3px"></div></div></div>`;
-  }).join('');
+  document.getElementById('weatherTable').innerHTML=byW.map(d=>{const pct=Math.round(d.avg_volume/maxVol*100);const c=cong(d.avg_volume);return `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px"><span style="color:var(--text2)">${d.weather}</span><span style="font-family:var(--mono);color:var(--accent)">${d.avg_volume.toLocaleString()}</span></div><div style="height:5px;background:var(--bg3);border-radius:3px"><div style="height:5px;width:${pct}%;background:${c.color};border-radius:3px"></div></div></div>`;}).join('');
   const byT=data?data.by_temp:{};
   const tl=Object.keys(byT).length?Object.keys(byT):['-40to-10','-10to0','0to10','10to20','20to30','30+'];
   const tv=Object.values(byT).length?Object.values(byT):[1200,1800,2600,3200,2900,2400];
-  new Chart(document.getElementById('chartTemp'),{type:'line',data:{labels:tl,datasets:[{label:'Avg Volume',data:tv,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.1)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#f97316'}]},options:{...COPTS}});
+  new Chart(document.getElementById('chartTemp'),{type:'line',data:{labels:tl,datasets:[{label:'Avg Volume',data:tv,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.08)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#f97316'}]},options:{...COPTS}});
 }
 
 // ── PREDICTION ────────────────────────────────────────────────
@@ -685,17 +909,11 @@ async function runPrediction(){
   const rain=+document.getElementById('pred-rain').value;
   const snow=+document.getElementById('pred-snow').value;
   const weather=document.getElementById('pred-weather').value;
-
   const btn=document.querySelector('#page-prediction .btn-predict');
   btn.textContent='⏳ Predicting...';
-
   let d=await fetchAPI('/predict','POST',{hour,dow,month,temp_c,rain,snow,clouds:40,weather});
-  if(!d){
-    const vol=Math.max(0,Math.round(DEMO[hour]*(dow>=5?0.6:1)*(1-rain*0.01)*(1-snow*0.03)));
-    d={...cong(vol),volume:vol,factors:['Demo mode — start api.py for live predictions']};
-  }
-
-  const colMap={LOW:'#22c55e',MEDIUM:'#eab308',HIGH:'#f97316',SEVERE:'#ef4444'};
+  if(!d){const vol=Math.max(0,Math.round(DEMO[hour]*(dow>=5?0.6:1)*(1-rain*0.01)*(1-snow*0.03)));d={...cong(vol),volume:vol,factors:['Demo mode — start API for live predictions']};}
+  const colMap={LOW:'#22c55e',MEDIUM:'#f59e0b',HIGH:'#f97316',SEVERE:'#ef4444'};
   const lblMap={LOW:'🟢 LOW — Free Flow',MEDIUM:'🟡 MEDIUM — Light',HIGH:'🟠 HIGH — Moderate',SEVERE:'🔴 SEVERE — Heavy'};
   document.getElementById('resVolume').textContent=d.volume.toLocaleString();
   document.getElementById('resVolume').style.color=d.color||colMap[d.level];
@@ -705,47 +923,34 @@ async function runPrediction(){
   document.getElementById('resFill').style.width=d.risk+'%';
   document.getElementById('resFill').style.background=d.color||colMap[d.level];
   document.getElementById('resFactors').innerHTML=(d.factors||[]).map(f=>`<li><div class="info-dot"></div>${f}</li>`).join('');
-
-  if(gaugeChart) gaugeChart.destroy();
-  gaugeChart=new Chart(document.getElementById('chartGauge'),{
-    type:'doughnut',
-    data:{datasets:[{data:[d.risk,100-d.risk],backgroundColor:[d.color||'#ef4444','rgba(30,45,71,0.8)'],borderWidth:0,cutout:'72%',rotation:-90,circumference:180}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}}}
-  });
+  if(gaugeChart)gaugeChart.destroy();
+  gaugeChart=new Chart(document.getElementById('chartGauge'),{type:'doughnut',data:{datasets:[{data:[d.risk,100-d.risk],backgroundColor:[d.color||'#ef4444','rgba(30,30,40,0.8)'],borderWidth:0,cutout:'72%',rotation:-90,circumference:180}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}}}});
   btn.textContent='🚦 Predict Congestion';
 }
+function initPrediction(){setTimeout(runPrediction,300);}
 
-function initPrediction(){ setTimeout(runPrediction,300); }
-
-// ── 24H FORECAST ─────────────────────────────────────────────
+// ── FORECAST ──────────────────────────────────────────────────
 let forecastChart=null;
 async function runForecast(){
   const dow=+document.getElementById('fc-dow').value;
   const month=+document.getElementById('fc-month').value;
   const temp_c=+document.getElementById('fc-temp').value;
   const weather=document.getElementById('fc-weather').value;
-
   let data=await fetchAPI('/forecast24','POST',{dow,month,temp_c,rain:0,snow:0,clouds:40,weather});
-  if(!data) data=Array.from({length:24},(_,h)=>{const vol=Math.max(0,Math.round(DEMO[h]*(dow>=5?0.6:1)));return{hour:h,volume:vol,...cong(vol)};});
-
-  if(forecastChart) forecastChart.destroy();
-  forecastChart=new Chart(document.getElementById('chartForecast'),{
-    type:'bar',
-    data:{labels:HL,datasets:[{label:'Predicted Volume',data:data.map(d=>d.volume),backgroundColor:data.map(d=>(d.color||'#38bdf8')+'bb'),borderRadius:5,borderSkipped:false}]},
-    options:{...COPTS,plugins:{...COPTS.plugins,tooltip:{callbacks:{label:c=>{const d2=data[c.dataIndex];return `${c.raw.toLocaleString()} veh/hr — ${d2.level} (Risk:${d2.risk}/100)`;}}}}}
-  });
-
+  if(!data)data=Array.from({length:24},(_,h)=>{const vol=Math.max(0,Math.round(DEMO[h]*(dow>=5?0.6:1)));return{hour:h,volume:vol,...cong(vol)};});
+  if(forecastChart)forecastChart.destroy();
+  forecastChart=new Chart(document.getElementById('chartForecast'),{type:'bar',data:{labels:HL,datasets:[{label:'Predicted Volume',data:data.map(d=>d.volume),backgroundColor:data.map(d=>d.color||'#6c63ff'),borderColor:data.map(d=>d.color||'#6c63ff'),borderWidth:1,borderRadius:5,borderSkipped:false}]},options:{...COPTS}});
   const peak=data.reduce((a,b)=>a.volume>b.volume?a:b);
   const quiet=data.reduce((a,b)=>a.volume<b.volume?a:b);
   const severe=data.filter(d=>d.level==='SEVERE').length;
   document.getElementById('forecastSummary').innerHTML=`
-    <div class="card kpi"><div class="kpi-val" style="color:#ef4444">${peak.volume.toLocaleString()}</div><div class="kpi-label">Peak Volume</div><div class="kpi-delta up">${peak.hour}:00 — SEVERE</div></div>
-    <div class="card kpi"><div class="kpi-val" style="color:#22c55e">${quiet.volume.toLocaleString()}</div><div class="kpi-label">Quietest Hour</div><div class="kpi-delta down">${quiet.hour}:00 — LOW</div></div>
-    <div class="card kpi"><div class="kpi-val" style="color:#f97316">${severe}</div><div class="kpi-label">Severe Hours</div><div class="kpi-delta">today</div></div>`;
+    <div class="kpi" style="--kpi-color:rgba(239,68,68,0.1)"><div class="kpi-val" style="color:#ef4444">${peak.volume.toLocaleString()}</div><div class="kpi-label">Peak Volume</div><div class="kpi-sub">${peak.hour}:00</div></div>
+    <div class="kpi" style="--kpi-color:rgba(34,197,94,0.1)"><div class="kpi-val" style="color:#22c55e">${quiet.volume.toLocaleString()}</div><div class="kpi-label">Quietest Hour</div><div class="kpi-sub">${quiet.hour}:00</div></div>
+    <div class="kpi" style="--kpi-color:rgba(249,115,22,0.1)"><div class="kpi-val" style="color:#f97316">${severe}</div><div class="kpi-label">Severe Hours</div><div class="kpi-sub">today</div></div>`;
 }
-function initForecast(){ runForecast(); }
+function initForecast(){runForecast();}
 
-// ── SCENARIO ──────────────────────────────────────────────────
+// ── SCENARIO ─────────────────────────────────────────────────
 let scenarioChart=null;
 async function runScenario(){
   const dow=+document.getElementById('sc-dow').value;
@@ -753,68 +958,28 @@ async function runScenario(){
   const sevt=+document.getElementById('sc-sevt').value;
   const inc=+document.getElementById('sc-inc').value;
   const rw=+document.getElementById('sc-rw').value;
-
   let d=await fetchAPI('/scenario','POST',{dow,month:6,temp_c:15,rain:wsev*0.3,snow:0,clouds:wsev,weather:'Clouds',weather_severity:wsev,special_event:sevt,incident:inc,remote_work:rw});
-  if(!d){
-    const base=DEMO.map(v=>Math.round(v*(dow>=5?0.6:1)));
-    const mod=base.map(v=>Math.round(v*(1-wsev/200)*(1+sevt/250)*(1+inc/300)*(1-rw/400)));
-    d={base,modified:mod,base_avg:Math.round(base.reduce((s,v)=>s+v,0)/24),mod_avg:Math.round(mod.reduce((s,v)=>s+v,0)/24)};
-  }
-
-  if(scenarioChart) scenarioChart.destroy();
-  scenarioChart=new Chart(document.getElementById('chartScenario'),{
-    type:'line',
-    data:{labels:HL,datasets:[
-      {label:'Base',data:d.base,borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,0.05)',fill:true,tension:0.4,borderWidth:2,pointRadius:2},
-      {label:'Modified',data:d.modified,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:2,borderDash:[5,3]}
-    ]},
-    options:{...COPTS}
-  });
+  if(!d){const base=DEMO.map(v=>Math.round(v*(dow>=5?0.6:1)));const mod=base.map(v=>Math.round(v*(1-wsev/200)*(1+sevt/250)*(1+inc/300)*(1-rw/400)));d={base,modified:mod,base_avg:Math.round(base.reduce((s,v)=>s+v,0)/24),mod_avg:Math.round(mod.reduce((s,v)=>s+v,0)/24)};}
+  if(scenarioChart)scenarioChart.destroy();
+  scenarioChart=new Chart(document.getElementById('chartScenario'),{type:'line',data:{labels:HL,datasets:[{label:'Base',data:d.base,borderColor:'#6c63ff',backgroundColor:'rgba(108,99,255,0.05)',fill:true,tension:0.4,borderWidth:2,pointRadius:2},{label:'Modified',data:d.modified,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.05)',fill:true,tension:0.4,borderWidth:2,pointRadius:2,borderDash:[5,3]}]},options:{...COPTS}});
   document.getElementById('scBaseAvg').textContent=d.base_avg.toLocaleString();
   document.getElementById('scModAvg').textContent=d.mod_avg.toLocaleString();
   document.getElementById('scModAvg').style.color=d.mod_avg>d.base_avg?'#ef4444':'#22c55e';
 }
-function initScenario(){ runScenario(); }
+function initScenario(){runScenario();}
 
-// ── ML INSIGHTS ───────────────────────────────────────────────
+// ── INSIGHTS ─────────────────────────────────────────────────
 async function initInsights(){
   const fi=await fetchAPI('/feature_importance');
   const fiData=fi||[{feature:'Hour of Day',importance:0.3124},{feature:'Rush Hour',importance:0.2234},{feature:'Day of Week',importance:0.1456},{feature:'Is Weekend',importance:0.0987},{feature:'Temperature',importance:0.0756},{feature:'Month',importance:0.0534},{feature:'Hour (sin)',importance:0.0312},{feature:'Weather Type',importance:0.0234},{feature:'Rainfall',importance:0.0187},{feature:'Cloud Cover',importance:0.0176}];
   const maxFI=Math.max(...fiData.map(d=>d.importance));
-  const colors=['#38bdf8','#a855f7','#ef4444','#22c55e','#eab308','#f97316','#ec4899','#06b6d4','#84cc16','#f43f5e'];
-  document.getElementById('featureImportance').innerHTML=fiData.slice(0,10).map((d,i)=>`
-    <div class="fi-item">
-      <div class="fi-header"><span style="color:var(--text2)">${d.feature}</span><span class="fi-pct">${(d.importance*100).toFixed(1)}%</span></div>
-      <div class="fi-bar-bg"><div class="fi-bar" style="width:${Math.round(d.importance/maxFI*100)}%;background:${colors[i%colors.length]}"></div></div>
-    </div>`).join('');
-
-  const bench=[
-    {model:'XGBoost',r2:'0.9340',mae:'286.8',cls:'85.6%',tag:'tag-severe'},
-    {model:'LightGBM',r2:'0.9324',mae:'286.5',cls:'85.8%',tag:'tag-severe'},
-    {model:'Grad. Boost',r2:'0.9260',mae:'322.7',cls:'84.3%',tag:'tag-high'},
-    {model:'Random Forest',r2:'0.9228',mae:'310.7',cls:'84.3%',tag:'tag-high'},
-    {model:'Decision Tree',r2:'0.9212',mae:'306.8',cls:'85.4%',tag:'tag-high'},
-    {model:'KNN',r2:'0.8948',mae:'416.1',cls:'78.3%',tag:'tag-medium'},
-    {model:'Linear Reg.',r2:'0.7849',mae:'702.3',cls:'62.3%',tag:'tag-low'},
-  ];
-  document.getElementById('benchmarkTable').innerHTML=`
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
-      <tr style="border-bottom:1px solid var(--border)">
-        <th style="text-align:left;padding:8px;color:var(--text3)">Model</th>
-        <th style="text-align:right;padding:8px;color:var(--text3)">R²</th>
-        <th style="text-align:right;padding:8px;color:var(--text3)">MAE</th>
-        <th style="text-align:right;padding:8px;color:var(--text3)">ClassAcc</th>
-      </tr>
-      ${bench.map(b=>`<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:8px;color:var(--text2)">${b.model}</td>
-        <td style="padding:8px;text-align:right;font-family:var(--mono);color:var(--accent)">${b.r2}</td>
-        <td style="padding:8px;text-align:right;font-family:var(--mono);color:var(--text)">${b.mae}</td>
-        <td style="padding:8px;text-align:right"><span class="tag ${b.tag}">${b.cls}</span></td>
-      </tr>`).join('')}
-    </table>`;
+  const colors=['#6c63ff','#a855f7','#ef4444','#22c55e','#f59e0b','#f97316','#ec4899','#06b6d4','#84cc16','#f43f5e'];
+  document.getElementById('featureImportance').innerHTML=fiData.slice(0,10).map((d,i)=>`<div class="fi-item"><div class="fi-header"><span style="color:var(--text2)">${d.feature}</span><span class="fi-pct">${(d.importance*100).toFixed(1)}%</span></div><div class="fi-bar-bg"><div class="fi-bar" style="width:${Math.round(d.importance/maxFI*100)}%;background:${colors[i%colors.length]}"></div></div></div>`).join('');
+  const bench=[{model:'XGBoost',r2:'0.9340',mae:'286.8',cls:'85.6%',tag:'tag-severe'},{model:'LightGBM',r2:'0.9324',mae:'286.5',cls:'85.8%',tag:'tag-severe'},{model:'Grad. Boost',r2:'0.9260',mae:'322.7',cls:'84.3%',tag:'tag-high'},{model:'Random Forest',r2:'0.9228',mae:'310.7',cls:'84.3%',tag:'tag-high'},{model:'Decision Tree',r2:'0.9212',mae:'306.8',cls:'85.4%',tag:'tag-high'},{model:'KNN',r2:'0.8948',mae:'416.1',cls:'78.3%',tag:'tag-medium'},{model:'Linear Reg.',r2:'0.7849',mae:'702.3',cls:'62.3%',tag:'tag-low'}];
+  document.getElementById('benchmarkTable').innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:8px;color:var(--text3)">Model</th><th style="text-align:right;padding:8px;color:var(--text3)">R²</th><th style="text-align:right;padding:8px;color:var(--text3)">MAE</th><th style="text-align:right;padding:8px;color:var(--text3)">ClassAcc</th></tr>${bench.map(b=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px;color:var(--text2)">${b.model}</td><td style="padding:8px;text-align:right;font-family:var(--mono);color:var(--accent)">${b.r2}</td><td style="padding:8px;text-align:right;font-family:var(--mono)">${b.mae}</td><td style="padding:8px;text-align:right"><span class="tag ${b.tag}">${b.cls}</span></td></tr>`).join('')}</table>`;
 }
 
-// ── CALENDAR ──────────────────────────────────────────────────
+// ── CALENDAR ─────────────────────────────────────────────────
 async function initCalendar(){
   const risks=await fetchAPI('/congestion_risk');
   const today=new Date();
@@ -822,27 +987,19 @@ async function initCalendar(){
   let html=`<div class="cal-grid" style="margin-bottom:8px">${dayNames.map(d=>`<div class="cal-day-name">${d}</div>`).join('')}</div><div class="cal-grid">`;
   const startDate=new Date(today);startDate.setDate(today.getDate()-29);
   const startDow=startDate.getDay();
-  for(let i=0;i<startDow;i++) html+=`<div style="aspect-ratio:1"></div>`;
+  for(let i=0;i<startDow;i++)html+=`<div style="aspect-ratio:1"></div>`;
   for(let i=0;i<30;i++){
     const d=new Date(startDate);d.setDate(startDate.getDate()+i);
     const isWE=d.getDay()===0||d.getDay()===6;
     const vol=Math.round((isWE?1600:2800)+Math.sin(i*1.7)*400+Math.cos(i*2.3)*200);
     const c=cong(vol);
     const alpha=0.2+Math.min(0.7,vol/7000);
-    html+=`<div class="cal-cell" style="background:${c.color}${Math.round(alpha*255).toString(16).padStart(2,'0')}" title="${d.toDateString()}: ${vol.toLocaleString()} avg — ${c.level}">
-      <div style="font-weight:600;font-size:13px;color:${c.color}">${d.getDate()}</div>
-      <div style="font-size:8px;color:rgba(255,255,255,0.6)">${c.level}</div>
-    </div>`;
+    html+=`<div class="cal-cell" style="background:${c.color}${Math.round(alpha*255).toString(16).padStart(2,'0')}" title="${d.toDateString()}: ${vol.toLocaleString()} — ${c.level}"><div style="font-weight:700;font-size:13px;color:${c.color}">${d.getDate()}</div><div style="font-size:8px;color:rgba(255,255,255,0.5)">${c.level}</div></div>`;
   }
   html+='</div>';
   document.getElementById('calendarGrid').innerHTML=html;
-
   const riskData=risks?Object.values(risks):DEMO.map(v=>cong(v).risk);
-  new Chart(document.getElementById('chartRiskHourly'),{
-    type:'bar',
-    data:{labels:HL,datasets:[{label:'Risk Score',data:riskData,backgroundColor:riskData.map(r=>r>=75?'#ef4444':r>=50?'#f97316':r>=25?'#eab308':'#22c55e'),borderRadius:4,borderSkipped:false}]},
-    options:{...COPTS,scales:{...COPTS.scales,y:{...COPTS.scales.y,max:100}}}
-  });
+  new Chart(document.getElementById('chartRiskHourly'),{type:'bar',data:{labels:HL,datasets:[{label:'Risk Score',data:riskData,backgroundColor:riskData.map(r=>r>=75?'#ef4444':r>=50?'#f97316':r>=25?'#f59e0b':'#22c55e'),borderRadius:4,borderSkipped:false}]},options:{...COPTS,scales:{...COPTS.scales,y:{...COPTS.scales.y,max:100}}}});
 }
 
 // ── PAGE SWITCHING ────────────────────────────────────────────
@@ -851,15 +1008,523 @@ const initialized={};
 
 function showPage(name,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  btn.classList.add('active');
+  document.querySelectorAll('.tab').forEach(b=>b.classList&&b.classList.remove('active'));
+  const pg=document.getElementById('page-'+name);
+  if(pg)pg.classList.add('active');
+  if(btn)btn.classList.add('active');
   if(!initialized[name]){initialized[name]=true;setTimeout(()=>pageInits[name]&&pageInits[name](),50);}
 }
 
-// ── INIT ──────────────────────────────────────────────────────
-initialized['overview']=true;
-checkAPI().then(()=>setTimeout(initOverview,100));
+// ── HERO ANIMATIONS ───────────────────────────────────────────
+function initHeroAnimations(){
+  gsap.from('.hero-badge',{opacity:0,y:20,duration:0.6,delay:0.2,ease:'power3.out'});
+  gsap.from('.hero-title',{opacity:0,y:30,duration:0.8,delay:0.4,ease:'power3.out'});
+  gsap.from('.hero-sub',{opacity:0,y:20,duration:0.6,delay:0.6,ease:'power3.out'});
+  gsap.from('.hero-btns',{opacity:0,y:20,duration:0.6,delay:0.8,ease:'power3.out'});
+  gsap.from('.hero-stat',{opacity:0,y:20,duration:0.5,delay:1.0,stagger:0.1,ease:'power3.out'});
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+window.addEventListener('load',function(){
+  initNav();
+  initHeroAnimations();
+  checkAPI();
+  initialized['overview']=false;
+});
+</script>
+
+<script>
+(function() {
+  var container = document.getElementById('lightPillarHero');
+  if(!container || typeof THREE === 'undefined') return;
+  var w = window.innerWidth;
+  var h = 64;
+  var renderer = new THREE.WebGLRenderer({antialias:false, alpha:true});
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+  var scene  = new THREE.Scene();
+  var camera = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+  var vertexShader = "varying vec2 vUv; void main(){vUv=uv;gl_Position=vec4(position,1.0);}";
+  var fragmentShader = [
+    "precision mediump float;",
+    "uniform float uTime;",
+    "uniform vec2 uResolution;",
+    "uniform vec3 uTopColor;",
+    "uniform vec3 uBottomColor;",
+    "uniform float uGlowAmount;",
+    "uniform float uPillarWidth;",
+    "uniform float uPillarHeight;",
+    "varying vec2 vUv;",
+    "void main(){",
+    "  vec2 uv=(vUv*2.0-1.0)*vec2(uResolution.x/uResolution.y,1.0);",
+    "  vec3 ro=vec3(0.0,0.0,-10.0);",
+    "  vec3 rd=normalize(vec3(uv,1.0));",
+    "  vec3 col=vec3(0.0);",
+    "  float t=0.1;",
+    "  float rotC=cos(uTime*0.3);",
+    "  float rotS=sin(uTime*0.3);",
+    "  for(int i=0;i<40;i++){",
+    "    vec3 p=ro+rd*t;",
+    "    p.xz=vec2(rotC*p.x-rotS*p.z,rotS*p.x+rotC*p.z);",
+    "    vec3 q=p;",
+    "    q.y=p.y*uPillarHeight+uTime;",
+    "    q+=cos(q.zxy*1.0-uTime)*1.0;",
+    "    q+=cos(q.zxy*2.0-uTime*2.0)*0.5;",
+    "    float d=length(cos(q.xz))-0.2;",
+    "    float bound=length(p.xz)-uPillarWidth;",
+    "    float k=4.0;",
+    "    float h2=max(k-abs(d-bound),0.0);",
+    "    d=max(d,bound)+h2*h2*0.0625/k;",
+    "    d=abs(d)*0.15+0.01;",
+    "    float grad=clamp((15.0-p.y)/30.0,0.0,1.0);",
+    "    col+=mix(uBottomColor,uTopColor,grad)/d;",
+    "    t+=d*1.2;",
+    "    if(t>50.0)break;",
+    "  }",
+    "  col=tanh(col*uGlowAmount/(uPillarWidth/3.0));",
+    "  gl_FragColor=vec4(col*1.2,1.0);",
+    "}"
+  ].join("\n");
+  function hexToVec3(hex){
+    var c=new THREE.Color(hex);
+    return new THREE.Vector3(c.r,c.g,c.b);
+  }
+  var material = new THREE.ShaderMaterial({
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader,
+    uniforms:{
+      uTime:         {value:0},
+      uResolution:   {value:new THREE.Vector2(w,h)},
+      uTopColor:     {value:hexToVec3('#5227FF')},
+      uBottomColor:  {value:hexToVec3('#38bdf8')},
+      uGlowAmount:   {value:0.003},
+      uPillarWidth:  {value:3.0},
+      uPillarHeight: {value:0.4}
+    },
+    transparent:true, depthWrite:false, depthTest:false
+  });
+  var mesh = new THREE.Mesh(new THREE.PlaneGeometry(2,2), material);
+  scene.add(mesh);
+  var clock=0;
+  function animate(){
+    requestAnimationFrame(animate);
+    clock+=0.016*0.3;
+    material.uniforms.uTime.value=clock;
+    renderer.render(scene,camera);
+  }
+  animate();
+  window.addEventListener('resize',function(){
+    var nw=window.innerWidth;
+    renderer.setSize(nw,64);
+    material.uniforms.uResolution.value.set(nw,64);
+  });
+})();
+</script>
+
+<script>
+(function() {
+  var container = document.getElementById('lightPillarBg');
+  if(!container || typeof THREE === 'undefined') return;
+
+  var w = window.innerWidth;
+  var h = window.innerHeight;
+
+  var renderer = new THREE.WebGLRenderer({antialias:false, alpha:true});
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  container.appendChild(renderer.domElement);
+
+  var scene  = new THREE.Scene();
+  var camera = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+
+  var vert = "varying vec2 vUv; void main(){vUv=uv;gl_Position=vec4(position,1.0);}";
+
+  var frag = [
+    "precision highp float;",
+    "uniform float uTime;",
+    "uniform vec2 uResolution;",
+    "uniform vec3 uTopColor;",
+    "uniform vec3 uBottomColor;",
+    "uniform float uGlowAmount;",
+    "uniform float uPillarWidth;",
+    "uniform float uPillarHeight;",
+    "uniform float uNoiseIntensity;",
+    "uniform float uIntensity;",
+    "varying vec2 vUv;",
+    "void main(){",
+    "  vec2 uv=(vUv*2.0-1.0)*vec2(uResolution.x/uResolution.y,1.0);",
+    "  float pRotC=cos(0.436);float pRotS=sin(0.436);",
+    "  uv=vec2(pRotC*uv.x-pRotS*uv.y,pRotS*uv.x+pRotC*uv.y);",
+    "  vec3 ro=vec3(0.0,0.0,-10.0);",
+    "  vec3 rd=normalize(vec3(uv,1.0));",
+    "  vec3 col=vec3(0.0);",
+    "  float t=0.1;",
+    "  float rotC=cos(uTime*0.3);",
+    "  float rotS=sin(uTime*0.3);",
+    "  float wC=cos(0.4);float wS=sin(0.4);",
+    "  for(int i=0;i<80;i++){",
+    "    vec3 p=ro+rd*t;",
+    "    p.xz=vec2(rotC*p.x-rotS*p.z,rotS*p.x+rotC*p.z);",
+    "    vec3 q=p;",
+    "    q.y=p.y*uPillarHeight+uTime;",
+    "    float freq=1.0;float amp=1.0;",
+    "    for(int j=0;j<4;j++){",
+    "      q.xz=vec2(wC*q.x-wS*q.z,wS*q.x+wC*q.z);",
+    "      q+=cos(q.zxy*freq-uTime*float(j)*2.0)*amp;",
+    "      freq*=2.0;amp*=0.5;",
+    "    }",
+    "    float d=length(cos(q.xz))-0.2;",
+    "    float bound=length(p.xz)-uPillarWidth;",
+    "    float k=4.0;",
+    "    float h2=max(k-abs(d-bound),0.0);",
+    "    d=max(d,bound)+h2*h2*0.0625/k;",
+    "    d=abs(d)*0.15+0.01;",
+    "    float grad=clamp((15.0-p.y)/30.0,0.0,1.0);",
+    "    col+=mix(uBottomColor,uTopColor,grad)/d;",
+    "    t+=d;",
+    "    if(t>50.0)break;",
+    "  }",
+    "  col=tanh(col*uGlowAmount/(uPillarWidth/3.0));",
+    "  col-=fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453)/15.0*uNoiseIntensity;",
+    "  gl_FragColor=vec4(col*uIntensity,1.0);",
+    "}"
+  ].join("\n");
+
+  function hex3(hex){
+    var c=new THREE.Color(hex);
+    return new THREE.Vector3(c.r,c.g,c.b);
+  }
+
+  var mat = new THREE.ShaderMaterial({
+    vertexShader:vert, fragmentShader:frag,
+    uniforms:{
+      uTime:        {value:0},
+      uResolution:  {value:new THREE.Vector2(w,h)},
+      uTopColor:    {value:hex3('#5227FF')},
+      uBottomColor: {value:hex3('#FF9FFC')},
+      uGlowAmount:  {value:0.002},
+      uPillarWidth: {value:3.0},
+      uPillarHeight:{value:0.4},
+      uNoiseIntensity:{value:0.5},
+      uIntensity:   {value:1.4}
+    },
+    transparent:true, depthWrite:false, depthTest:false
+  });
+
+  scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2), mat));
+
+  var clk=0;
+  function animate(){
+    requestAnimationFrame(animate);
+    clk+=0.016*0.6;
+    mat.uniforms.uTime.value=clk;
+    renderer.render(scene,camera);
+  }
+  animate();
+
+  window.addEventListener('resize',function(){
+    var nw=window.innerWidth, nh=window.innerHeight;
+    renderer.setSize(nw,nh);
+    mat.uniforms.uResolution.value.set(nw,nh);
+  });
+})();
+</script>
+
+<script>
+(function() {
+  var canvas = document.createElement('canvas');
+  canvas.id = 'fluid';
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:999;';
+  document.body.appendChild(canvas);
+
+  var config = {
+    SIM_RESOLUTION: 128,
+    DYE_RESOLUTION: 1440,
+    DENSITY_DISSIPATION: 3.5,
+    VELOCITY_DISSIPATION: 2,
+    PRESSURE: 0.1,
+    PRESSURE_ITERATIONS: 20,
+    CURL: 3,
+    SPLAT_RADIUS: 0.2,
+    SPLAT_FORCE: 6000,
+    SHADING: true,
+    COLOR_UPDATE_SPEED: 10,
+    TRANSPARENT: true
+  };
+
+  var pointers = [];
+  function PointerPrototype() {
+    this.id = -1;
+    this.texcoordX = 0;
+    this.texcoordY = 0;
+    this.prevTexcoordX = 0;
+    this.prevTexcoordY = 0;
+    this.deltaX = 0;
+    this.deltaY = 0;
+    this.down = false;
+    this.moved = false;
+    this.color = [0,0,0];
+  }
+  pointers.push(new PointerPrototype());
+
+  var params = {alpha:true,depth:false,stencil:false,antialias:false,preserveDrawingBuffer:false};
+  var gl = canvas.getContext('webgl2',params);
+  var isWebGL2 = !!gl;
+  if(!isWebGL2) gl = canvas.getContext('webgl',params)||canvas.getContext('experimental-webgl',params);
+
+  var halfFloat, supportLinearFiltering;
+  if(isWebGL2){
+    gl.getExtension('EXT_color_buffer_float');
+    supportLinearFiltering = gl.getExtension('OES_texture_float_linear');
+  } else {
+    halfFloat = gl.getExtension('OES_texture_half_float');
+    supportLinearFiltering = gl.getExtension('OES_texture_half_float_linear');
+  }
+  gl.clearColor(0,0,0,1);
+  var halfFloatTexType = isWebGL2 ? gl.HALF_FLOAT : (halfFloat && halfFloat.HALF_FLOAT_OES);
+
+  function getSupportedFormat(gl,internalFormat,format,type){
+    if(!supportRenderTextureFormat(gl,internalFormat,format,type)){
+      if(internalFormat===gl.R16F) return getSupportedFormat(gl,gl.RG16F,gl.RG,type);
+      if(internalFormat===gl.RG16F) return getSupportedFormat(gl,gl.RGBA16F,gl.RGBA,type);
+      return null;
+    }
+    return {internalFormat,format};
+  }
+
+  function supportRenderTextureFormat(gl,internalFormat,format,type){
+    var tex=gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D,tex);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D,0,internalFormat,4,4,0,format,type,null);
+    var fbo=gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER,fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,tex,0);
+    return gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE;
+  }
+
+  var formatRGBA,formatRG,formatR;
+  if(isWebGL2){
+    formatRGBA=getSupportedFormat(gl,gl.RGBA16F,gl.RGBA,halfFloatTexType);
+    formatRG=getSupportedFormat(gl,gl.RG16F,gl.RG,halfFloatTexType);
+    formatR=getSupportedFormat(gl,gl.R16F,gl.RED,halfFloatTexType);
+  } else {
+    formatRGBA=getSupportedFormat(gl,gl.RGBA,gl.RGBA,halfFloatTexType);
+    formatRG=getSupportedFormat(gl,gl.RGBA,gl.RGBA,halfFloatTexType);
+    formatR=getSupportedFormat(gl,gl.RGBA,gl.RGBA,halfFloatTexType);
+  }
+
+  function compileShader(type,source){
+    var s=gl.createShader(type);
+    gl.shaderSource(s,source);
+    gl.compileShader(s);
+    return s;
+  }
+
+  function createProgram(vs,fs){
+    var p=gl.createProgram();
+    gl.attachShader(p,vs);
+    gl.attachShader(p,fs);
+    gl.linkProgram(p);
+    return p;
+  }
+
+  function getUniforms(program){
+    var u={};
+    var n=gl.getProgramParameter(program,gl.ACTIVE_UNIFORMS);
+    for(var i=0;i<n;i++){
+      var name=gl.getActiveUniform(program,i).name;
+      u[name]=gl.getUniformLocation(program,name);
+    }
+    return u;
+  }
+
+  var baseVS = compileShader(gl.VERTEX_SHADER,
+    'precision highp float;attribute vec2 aPosition;varying vec2 vUv;varying vec2 vL;varying vec2 vR;varying vec2 vT;varying vec2 vB;uniform vec2 texelSize;void main(){vUv=aPosition*0.5+0.5;vL=vUv-vec2(texelSize.x,0.0);vR=vUv+vec2(texelSize.x,0.0);vT=vUv+vec2(0.0,texelSize.y);vB=vUv-vec2(0.0,texelSize.y);gl_Position=vec4(aPosition,0.0,1.0);}');
+
+  var copyFS   = compileShader(gl.FRAGMENT_SHADER,'precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;uniform sampler2D uTexture;void main(){gl_FragColor=texture2D(uTexture,vUv);}');
+  var clearFS  = compileShader(gl.FRAGMENT_SHADER,'precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;uniform sampler2D uTexture;uniform float value;void main(){gl_FragColor=value*texture2D(uTexture,vUv);}');
+  var splatFS  = compileShader(gl.FRAGMENT_SHADER,'precision highp float;precision highp sampler2D;varying vec2 vUv;uniform sampler2D uTarget;uniform float aspectRatio;uniform vec3 color;uniform vec2 point;uniform float radius;void main(){vec2 p=vUv-point.xy;p.x*=aspectRatio;vec3 splat=exp(-dot(p,p)/radius)*color;vec3 base=texture2D(uTarget,vUv).xyz;gl_FragColor=vec4(base+splat,1.0);}');
+  var advFS    = compileShader(gl.FRAGMENT_SHADER,'precision highp float;precision highp sampler2D;varying vec2 vUv;uniform sampler2D uVelocity;uniform sampler2D uSource;uniform vec2 texelSize;uniform vec2 dyeTexelSize;uniform float dt;uniform float dissipation;void main(){vec2 coord=vUv-dt*texture2D(uVelocity,vUv).xy*texelSize;gl_FragColor=dissipation>0.0?texture2D(uSource,coord)/(1.0+dissipation*dt):texture2D(uSource,coord);}');
+  var divFS    = compileShader(gl.FRAGMENT_SHADER,'precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;varying highp vec2 vL;varying highp vec2 vR;varying highp vec2 vT;varying highp vec2 vB;uniform sampler2D uVelocity;void main(){float L=texture2D(uVelocity,vL).x;float R=texture2D(uVelocity,vR).x;float T=texture2D(uVelocity,vT).y;float B=texture2D(uVelocity,vB).y;vec2 C=texture2D(uVelocity,vUv).xy;if(vL.x<0.0){L=-C.x;}if(vR.x>1.0){R=-C.x;}if(vT.y>1.0){T=-C.y;}if(vB.y<0.0){B=-C.y;}gl_FragColor=vec4(0.5*(R-L+T-B),0.0,0.0,1.0);}');
+  var curlFS   = compileShader(gl.FRAGMENT_SHADER,'precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;varying highp vec2 vL;varying highp vec2 vR;varying highp vec2 vT;varying highp vec2 vB;uniform sampler2D uVelocity;void main(){float L=texture2D(uVelocity,vL).y;float R=texture2D(uVelocity,vR).y;float T=texture2D(uVelocity,vT).x;float B=texture2D(uVelocity,vB).x;gl_FragColor=vec4(0.5*(R-L-T+B),0.0,0.0,1.0);}');
+  var vortFS   = compileShader(gl.FRAGMENT_SHADER,'precision highp float;precision highp sampler2D;varying vec2 vUv;varying vec2 vL;varying vec2 vR;varying vec2 vT;varying vec2 vB;uniform sampler2D uVelocity;uniform sampler2D uCurl;uniform float curl;uniform float dt;void main(){float L=texture2D(uCurl,vL).x;float R=texture2D(uCurl,vR).x;float T=texture2D(uCurl,vT).x;float B=texture2D(uCurl,vB).x;float C=texture2D(uCurl,vUv).x;vec2 force=0.5*vec2(abs(T)-abs(B),abs(R)-abs(L));force/=length(force)+0.0001;force*=curl*C;force.y*=-1.0;vec2 vel=texture2D(uVelocity,vUv).xy+force*dt;vel=min(max(vel,-1000.0),1000.0);gl_FragColor=vec4(vel,0.0,1.0);}');
+  var pressFS  = compileShader(gl.FRAGMENT_SHADER,'precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;varying highp vec2 vL;varying highp vec2 vR;varying highp vec2 vT;varying highp vec2 vB;uniform sampler2D uPressure;uniform sampler2D uDivergence;void main(){float L=texture2D(uPressure,vL).x;float R=texture2D(uPressure,vR).x;float T=texture2D(uPressure,vT).x;float B=texture2D(uPressure,vB).x;float div=texture2D(uDivergence,vUv).x;gl_FragColor=vec4((L+R+B+T-div)*0.25,0.0,0.0,1.0);}');
+  var gradFS   = compileShader(gl.FRAGMENT_SHADER,'precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;varying highp vec2 vL;varying highp vec2 vR;varying highp vec2 vT;varying highp vec2 vB;uniform sampler2D uPressure;uniform sampler2D uVelocity;void main(){float L=texture2D(uPressure,vL).x;float R=texture2D(uPressure,vR).x;float T=texture2D(uPressure,vT).x;float B=texture2D(uPressure,vB).x;vec2 vel=texture2D(uVelocity,vUv).xy-vec2(R-L,T-B);gl_FragColor=vec4(vel,0.0,1.0);}');
+  var displayFS= compileShader(gl.FRAGMENT_SHADER,'precision highp float;precision highp sampler2D;varying vec2 vUv;uniform sampler2D uTexture;void main(){vec3 c=texture2D(uTexture,vUv).rgb;float a=max(c.r,max(c.g,c.b));gl_FragColor=vec4(c,a);}');
+
+  var copyP  = createProgram(baseVS,copyFS);   var copyU  = getUniforms(copyP);
+  var clearP = createProgram(baseVS,clearFS);  var clearU = getUniforms(clearP);
+  var splatP = createProgram(baseVS,splatFS);  var splatU = getUniforms(splatP);
+  var advP   = createProgram(baseVS,advFS);    var advU   = getUniforms(advP);
+  var divP   = createProgram(baseVS,divFS);    var divU   = getUniforms(divP);
+  var curlP  = createProgram(baseVS,curlFS);   var curlU  = getUniforms(curlP);
+  var vortP  = createProgram(baseVS,vortFS);   var vortU  = getUniforms(vortP);
+  var pressP = createProgram(baseVS,pressFS);  var pressU = getUniforms(pressP);
+  var gradP  = createProgram(baseVS,gradFS);   var gradU  = getUniforms(gradP);
+  var dispP  = createProgram(baseVS,displayFS);var dispU  = getUniforms(dispP);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,-1,1,1,1,1,-1]),gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,gl.createBuffer());
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array([0,1,2,0,2,3]),gl.STATIC_DRAW);
+  gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+  gl.enableVertexAttribArray(0);
+
+  function blit(target){
+    if(!target){
+      gl.viewport(0,0,gl.drawingBufferWidth,gl.drawingBufferHeight);
+      gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+    } else {
+      gl.viewport(0,0,target.width,target.height);
+      gl.bindFramebuffer(gl.FRAMEBUFFER,target.fbo);
+    }
+    gl.drawElements(gl.TRIANGLES,6,gl.UNSIGNED_SHORT,0);
+  }
+
+  function createFBO(w,h,internalFormat,format,type,param){
+    gl.activeTexture(gl.TEXTURE0);
+    var tex=gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D,tex);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,param);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,param);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D,0,internalFormat,w,h,0,format,type,null);
+    var fbo=gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER,fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,tex,0);
+    gl.viewport(0,0,w,h);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    return {texture:tex,fbo:fbo,width:w,height:h,
+      attach:function(id){gl.activeTexture(gl.TEXTURE0+id);gl.bindTexture(gl.TEXTURE_2D,tex);return id;}};
+  }
+
+  function createDoubleFBO(w,h,iF,f,t,p){
+    var f1=createFBO(w,h,iF,f,t,p), f2=createFBO(w,h,iF,f,t,p);
+    return {width:w,height:h,texelSizeX:1/w,texelSizeY:1/h,
+      read:f1,write:f2,
+      swap:function(){var tmp=this.read;this.read=this.write;this.write=tmp;}};
+  }
+
+  function getRes(r){
+    var ar=gl.drawingBufferWidth/gl.drawingBufferHeight;
+    if(ar<1)ar=1/ar;
+    var min=Math.round(r),max=Math.round(r*ar);
+    return gl.drawingBufferWidth>gl.drawingBufferHeight?{width:max,height:min}:{width:min,height:max};
+  }
+
+  function scale(n){return Math.floor(n*(window.devicePixelRatio||1));}
+
+  function resize(){
+    var w=scale(canvas.clientWidth),h=scale(canvas.clientHeight);
+    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;return true;}
+    return false;
+  }
+
+  var simRes=getRes(128),dyeRes=getRes(1440);
+  var filtering=supportLinearFiltering?gl.LINEAR:gl.NEAREST;
+  var dye      =createDoubleFBO(dyeRes.width,dyeRes.height,formatRGBA.internalFormat,formatRGBA.format,halfFloatTexType,filtering);
+  var velocity =createDoubleFBO(simRes.width,simRes.height,formatRG.internalFormat,formatRG.format,halfFloatTexType,filtering);
+  var divergence=createFBO(simRes.width,simRes.height,formatR.internalFormat,formatR.format,halfFloatTexType,gl.NEAREST);
+  var curlFBO  =createFBO(simRes.width,simRes.height,formatR.internalFormat,formatR.format,halfFloatTexType,gl.NEAREST);
+  var pressure =createDoubleFBO(simRes.width,simRes.height,formatR.internalFormat,formatR.format,halfFloatTexType,gl.NEAREST);
+
+  function HSVtoRGB(h,s,v){
+    var r,g,b,i=Math.floor(h*6),f=h*6-i,p=v*(1-s),q=v*(1-f*s),t=v*(1-(1-f)*s);
+    switch(i%6){case 0:r=v;g=t;b=p;break;case 1:r=q;g=v;b=p;break;case 2:r=p;g=v;b=t;break;case 3:r=p;g=q;b=v;break;case 4:r=t;g=p;b=v;break;case 5:r=v;g=p;b=q;break;}
+    return {r:r,g:g,b:b};
+  }
+
+  function genColor(){var c=HSVtoRGB(Math.random(),1,1);return {r:c.r*0.15,g:c.g*0.15,b:c.b*0.15};}
+
+  function splat(x,y,dx,dy,color){
+    gl.useProgram(splatP);
+    gl.uniform1i(splatU.uTarget,velocity.read.attach(0));
+    gl.uniform1f(splatU.aspectRatio,canvas.width/canvas.height);
+    gl.uniform2f(splatU.point,x,y);
+    gl.uniform3f(splatU.color,dx,dy,0);
+    gl.uniform1f(splatU.radius,config.SPLAT_RADIUS/100*(canvas.width>canvas.height?canvas.width/canvas.height:1));
+    blit(velocity.write);velocity.swap();
+    gl.uniform1i(splatU.uTarget,dye.read.attach(0));
+    gl.uniform3f(splatU.color,color.r,color.g,color.b);
+    blit(dye.write);dye.swap();
+  }
+
+  var lastTime=Date.now(),colorTimer=0;
+
+  function frame(){
+    var now=Date.now(),dt=Math.min((now-lastTime)/1000,0.016666);
+    lastTime=now;
+    if(resize()){
+      simRes=getRes(128);dyeRes=getRes(1440);
+    }
+    colorTimer+=dt*10;
+    if(colorTimer>=1){colorTimer=0;pointers.forEach(function(p){p.color=genColor();});}
+    pointers.forEach(function(p){if(p.moved){p.moved=false;splat(p.texcoordX,p.texcoordY,p.deltaX*config.SPLAT_FORCE,p.deltaY*config.SPLAT_FORCE,p.color);}});
+
+    gl.disable(gl.BLEND);
+    gl.useProgram(curlP);gl.uniform2f(curlU.texelSize,velocity.texelSizeX,velocity.texelSizeY);gl.uniform1i(curlU.uVelocity,velocity.read.attach(0));blit(curlFBO);
+    gl.useProgram(vortP);gl.uniform2f(vortU.texelSize,velocity.texelSizeX,velocity.texelSizeY);gl.uniform1i(vortU.uVelocity,velocity.read.attach(0));gl.uniform1i(vortU.uCurl,curlFBO.attach(1));gl.uniform1f(vortU.curl,config.CURL);gl.uniform1f(vortU.dt,dt);blit(velocity.write);velocity.swap();
+    gl.useProgram(divP);gl.uniform2f(divU.texelSize,velocity.texelSizeX,velocity.texelSizeY);gl.uniform1i(divU.uVelocity,velocity.read.attach(0));blit(divergence);
+    gl.useProgram(clearP);gl.uniform1i(clearU.uTexture,pressure.read.attach(0));gl.uniform1f(clearU.value,config.PRESSURE);blit(pressure.write);pressure.swap();
+    gl.useProgram(pressP);gl.uniform2f(pressU.texelSize,velocity.texelSizeX,velocity.texelSizeY);gl.uniform1i(pressU.uDivergence,divergence.attach(0));
+    for(var i=0;i<20;i++){gl.uniform1i(pressU.uPressure,pressure.read.attach(1));blit(pressure.write);pressure.swap();}
+    gl.useProgram(gradP);gl.uniform2f(gradU.texelSize,velocity.texelSizeX,velocity.texelSizeY);gl.uniform1i(gradU.uPressure,pressure.read.attach(0));gl.uniform1i(gradU.uVelocity,velocity.read.attach(1));blit(velocity.write);velocity.swap();
+    gl.useProgram(advP);gl.uniform2f(advU.texelSize,velocity.texelSizeX,velocity.texelSizeY);gl.uniform2f(advU.dyeTexelSize,velocity.texelSizeX,velocity.texelSizeY);var vid=velocity.read.attach(0);gl.uniform1i(advU.uVelocity,vid);gl.uniform1i(advU.uSource,vid);gl.uniform1f(advU.dt,dt);gl.uniform1f(advU.dissipation,config.VELOCITY_DISSIPATION);blit(velocity.write);velocity.swap();
+    gl.uniform2f(advU.dyeTexelSize,dye.texelSizeX,dye.texelSizeY);gl.uniform1i(advU.uVelocity,velocity.read.attach(0));gl.uniform1i(advU.uSource,dye.read.attach(1));gl.uniform1f(advU.dissipation,config.DENSITY_DISSIPATION);blit(dye.write);dye.swap();
+
+    gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.enable(gl.BLEND);
+    gl.useProgram(dispP);gl.uniform1i(dispU.uTexture,dye.read.attach(0));blit(null);
+
+    requestAnimationFrame(frame);
+  }
+
+  function updatePointerDown(pointer,id,x,y){
+    pointer.id=id;pointer.down=true;pointer.moved=false;
+    pointer.texcoordX=x/canvas.width;pointer.texcoordY=1-y/canvas.height;
+    pointer.prevTexcoordX=pointer.texcoordX;pointer.prevTexcoordY=pointer.texcoordY;
+    pointer.deltaX=0;pointer.deltaY=0;pointer.color=genColor();
+  }
+
+  function updatePointerMove(pointer,x,y){
+    pointer.prevTexcoordX=pointer.texcoordX;pointer.prevTexcoordY=pointer.texcoordY;
+    pointer.texcoordX=x/canvas.width;pointer.texcoordY=1-y/canvas.height;
+    var ar=canvas.width/canvas.height;
+    pointer.deltaX=(pointer.texcoordX-pointer.prevTexcoordX)*(ar<1?ar:1);
+    pointer.deltaY=(pointer.texcoordY-pointer.prevTexcoordY)*(ar>1?1/ar:1);
+    pointer.moved=Math.abs(pointer.deltaX)>0||Math.abs(pointer.deltaY)>0;
+  }
+
+  window.addEventListener('mousedown',function(e){
+    var p=pointers[0];
+    updatePointerDown(p,-1,scale(e.clientX),scale(e.clientY));
+    var c=genColor();c.r*=10;c.g*=10;c.b*=10;
+    splat(p.texcoordX,p.texcoordY,10*(Math.random()-0.5),30*(Math.random()-0.5),c);
+  });
+
+  window.addEventListener('mousemove',function(e){
+    var p=pointers[0];
+    if(p.down) updatePointerMove(p,scale(e.clientX),scale(e.clientY));
+    else {p.moved=true;updatePointerMove(p,scale(e.clientX),scale(e.clientY));}
+  });
+
+  window.addEventListener('touchstart',function(e){
+    var t=e.targetTouches[0];
+    updatePointerDown(pointers[0],t.identifier,scale(t.clientX),scale(t.clientY));
+  },{passive:true});
+
+  window.addEventListener('touchmove',function(e){
+    var t=e.targetTouches[0];
+    updatePointerMove(pointers[0],scale(t.clientX),scale(t.clientY));
+  },{passive:false});
+
+  frame();
+})();
 </script>
 </body>
 </html>
