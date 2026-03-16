@@ -1,23 +1,14 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "frontend.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "map_page.html", 
-      "use": "@vercel/static"
-    }
+    {"src": "*.html", "use": "@vercel/static"}
   ],
   "routes": [
-    {
-      "src": "/",
-      "dest": "/frontend.html"
-    },
-    {
-      "src": "/map",
-      "dest": "/map_page.html"
-    }
+    {"src": "/", "dest": "/frontend.html"},
+    {"src": "/map", "dest": "/map_page.html"},
+    {"src": "/eda", "dest": "/eda.html"},
+    {"src": "/features", "dest": "/features.html"},
+    {"src": "/evaluation", "dest": "/evaluation.html"},
+    {"src": "/(.*)", "dest": "/$1"}
   ]
 }
