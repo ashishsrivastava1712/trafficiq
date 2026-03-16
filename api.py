@@ -12,7 +12,7 @@ import joblib, os, json
 from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
 # ── Load & Prepare Data ───────────────────────────────────────
 CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)),
