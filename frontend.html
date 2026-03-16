@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -534,7 +534,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 <script>
 const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'https://web-production-29153.up.railway.app/api'
-  : 'https://TERA-RAILWAY-URL.railway.app/api';
+  : 'https://web-production-29153.up.railway.app/api';
 
 async function fetchAPI(ep, method='GET', body=null){
   const opts={method,headers:{'Content-Type':'application/json'}};
