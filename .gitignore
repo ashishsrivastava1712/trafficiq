@@ -12,3 +12,4 @@ models/mstn_proper_best.pth
 .env
 *.csv
 node_modules
+config.js
